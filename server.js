@@ -9,9 +9,9 @@ app.use(express.static(path.join(__dirname)));
 
 app.post('/api/gemini', async (req, res) => {
   // Strict security: API key must come from environment only, never from request
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error('GEMINI_API_KEY not set in environment');
+    console.error('OPENAI_API_KEY not set in environment');
     return res.status(500).json({ error: 'API not configured' });
   }
 
@@ -19,22 +19,21 @@ app.post('/api/gemini', async (req, res) => {
   const maxTokens = req.body?.maxTokens || 1200;
 
   if (!content || !content.toString().trim()) {
-    return res.status(400).json({ error: 'Missing content for Gemini request.' });
+    return res.status(400).json({ error: 'Missing content for OpenAI request.' });
   }
 
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:predict', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey
       },
       body: JSON.stringify({
-        instances: [{ content }],
-        parameters: {
-          temperature: 0.0,
-          max_output_tokens: Math.min(maxTokens, 3200)
-        }
+        model: 'gpt-4-turbo',
+        messages: [{ role: 'user', content }],
+        temperature: 0.0,
+        max_tokens: Math.min(maxTokens, 4096)
       })
     });
 
@@ -43,20 +42,10 @@ app.post('/api/gemini', async (req, res) => {
       return res.status(response.status).json({ error: 'API call failed' });
     }
 
-    let text = '';
-    if (data.predictions && Array.isArray(data.predictions)) {
-      text = data.predictions.map(p => p.content || '').join('\n');
-    } else if (data.output && Array.isArray(data.output)) {
-      text = data.output.map(o => o.content || o.text || '').join('\n');
-    } else if (data.candidates && Array.isArray(data.candidates)) {
-      text = data.candidates.map(c => c.content || c.text || '').join('\n');
-    } else {
-      text = JSON.stringify(data);
-    }
-
+    const text = data.choices?.[0]?.message?.content || '';
     return res.json({ text });
   } catch (err) {
-    console.error('Gemini proxy error:', err.message);
+    console.error('OpenAI proxy error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

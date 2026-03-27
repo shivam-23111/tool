@@ -6,10 +6,9 @@ export default async function handler(req, res) {
   }
 
   // Do NOT accept API key in request body for security
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    // Log to console for debugging but don't expose details to client
-    console.error('GEMINI_API_KEY not configured in environment');
+    console.error('OPENAI_API_KEY not configured in environment');
     return res.status(500).json({ error: 'API not configured' });
   }
 
@@ -20,18 +19,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing content' });
     }
 
-    const apiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:predict', {
+    const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey
       },
       body: JSON.stringify({
-        instances: [{ content }],
-        parameters: {
-          temperature: 0.0,
-          max_output_tokens: Math.min(maxTokens, 3200)
-        }
+        model: 'gpt-4-turbo',
+        messages: [{ role: 'user', content }],
+        temperature: 0.0,
+        max_tokens: Math.min(maxTokens, 4096)
       })
     });
 
@@ -40,20 +38,10 @@ export default async function handler(req, res) {
       return res.status(apiResponse.status).json({ error: 'API call failed' });
     }
 
-    let text = '';
-    if (Array.isArray(data.predictions)) {
-      text = data.predictions.map(p => p.content || '').join('\n');
-    } else if (Array.isArray(data.output)) {
-      text = data.output.map(o => o.content || o.text || '').join('\n');
-    } else if (Array.isArray(data.candidates)) {
-      text = data.candidates.map(c => c.content || c.text || '').join('\n');
-    } else {
-      text = JSON.stringify(data);
-    }
-
+    const text = data.choices?.[0]?.message?.content || '';
     return res.status(200).json({ text });
   } catch (error) {
-    console.error('Gemini API proxy error:', error.message);
+    console.error('OpenAI API proxy error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

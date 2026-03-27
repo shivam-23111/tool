@@ -699,7 +699,7 @@ Prompt Correctness
 1-Does not address the prompt or relies entirely on incorrect information.
 `;
 
-const DEFAULT_GEMINI_API_KEY = ''; // No hardcoded key — use env var or user input only
+const DEFAULT_OPENAI_API_KEY = ''; // No hardcoded key — use env var or user input only
 
 const COMPARE_RULES = `STRICT RULES for comment — ALL of these are mandatory, not optional. A comment that breaks any rule below is invalid.
 
@@ -929,7 +929,38 @@ function extractObj(raw) {
   catch(_){try{return Function('"use strict";return('+t+')')();}catch(e2){throw new Error('Object parse failed\n'+raw.slice(0,400));}}
 }
 async function claude(content, maxTokens=2000) {
-  // Local evaluation engine — no external API calls required, fully offline
+  // First, try to use OpenAI GPT API if key is available
+  const inputKey = (document.getElementById('geminiApiKey')?.value || '').trim();
+  const apiKey = inputKey || DEFAULT_OPENAI_API_KEY;
+  
+  if (apiKey && apiKey.startsWith('sk-')) {
+    try {
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'gpt-4-turbo',
+          messages: [{ role: 'user', content }],
+          temperature: 0.0,
+          max_tokens: Math.min(maxTokens, 4096)
+        })
+      });
+
+      if (r.ok) {
+        const d = await r.json();
+        if (d.choices && d.choices[0] && d.choices[0].message) {
+          return d.choices[0].message.content;
+        }
+      }
+    } catch (err) {
+      console.warn('OpenAI API failed, using local fallback:', err.message);
+    }
+  }
+
+  // Fallback: Local evaluation engine (no external API calls required, fully offline)
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate response delay
   
   // Pattern matching for JSON responses in scoring prompts
