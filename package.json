@@ -1,0 +1,12 @@
+{
+  "name": "tool",
+  "version": "1.0.0",
+  "description": "Gemini response evaluator with server-side proxy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
