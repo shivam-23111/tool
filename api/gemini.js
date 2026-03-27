@@ -1,26 +1,30 @@
 export default async function handler(req, res) {
+  // Strict security: only accept POST, require API key from environment
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const { apiKey, content, maxTokens = 1200 } = req.body || {};
-    const keyToUse = (apiKey || process.env.GEMINI_API_KEY || 'AIzaSyC2UsOg2uMCEwGfpyCtvBhocZ2o5fDwG5w').trim();
+  // Do NOT accept API key in request body for security
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    // Log to console for debugging but don't expose details to client
+    console.error('GEMINI_API_KEY not configured in environment');
+    return res.status(500).json({ error: 'API not configured' });
+  }
 
-    if (!keyToUse) {
-      return res.status(400).json({ error: 'Missing Gemini API key' });
-    }
+  try {
+    const { content, maxTokens = 1200 } = req.body || {};
 
     if (!content || typeof content !== 'string' || !content.trim()) {
       return res.status(400).json({ error: 'Missing content' });
     }
 
-    const apiResponse = await fetch('https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict', {
+    const apiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:predict', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + keyToUse
+        'Authorization': 'Bearer ' + apiKey
       },
       body: JSON.stringify({
         instances: [{ content }],
@@ -33,7 +37,7 @@ export default async function handler(req, res) {
 
     const data = await apiResponse.json();
     if (!apiResponse.ok) {
-      return res.status(apiResponse.status).json({ error: data.error?.message || JSON.stringify(data) });
+      return res.status(apiResponse.status).json({ error: 'API call failed' });
     }
 
     let text = '';
@@ -47,8 +51,9 @@ export default async function handler(req, res) {
       text = JSON.stringify(data);
     }
 
-    return res.status(200).json({ text, raw: data });
+    return res.status(200).json({ text });
   } catch (error) {
-    return res.status(500).json({ error: 'Proxy fallback failed: ' + (error.message || error) });
+    console.error('Gemini API proxy error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }

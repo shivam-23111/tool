@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 
-const DEFAULT_GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyC2UsOg2uMCEwGfpyCtvBhocZ2o5fDwG5w';
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -9,20 +8,22 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname)));
 
 app.post('/api/gemini', async (req, res) => {
-  const apiKey = (req.body.apiKey || DEFAULT_GEMINI_API_KEY).trim();
-  const content = req.body.content;
-  const maxTokens = req.body.maxTokens || 1200;
+  // Strict security: API key must come from environment only, never from request
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('GEMINI_API_KEY not set in environment');
+    return res.status(500).json({ error: 'API not configured' });
+  }
+
+  const content = req.body?.content;
+  const maxTokens = req.body?.maxTokens || 1200;
 
   if (!content || !content.toString().trim()) {
     return res.status(400).json({ error: 'Missing content for Gemini request.' });
   }
 
-  if (!apiKey) {
-    return res.status(400).json({ error: 'Missing API key (server-side).' });
-  }
-
   try {
-    const response = await fetch('https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:predict', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ app.post('/api/gemini', async (req, res) => {
 
     const data = await response.json();
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || JSON.stringify(data) });
+      return res.status(response.status).json({ error: 'API call failed' });
     }
 
     let text = '';
@@ -53,12 +54,14 @@ app.post('/api/gemini', async (req, res) => {
       text = JSON.stringify(data);
     }
 
-    return res.json({ text, raw: data });
+    return res.json({ text });
   } catch (err) {
-    return res.status(500).json({ error: 'Gemini proxy failed: ' + err.message });
+    console.error('Gemini proxy error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT} (serving index.html + /api/gemini)`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
