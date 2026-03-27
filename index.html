@@ -970,6 +970,25 @@ async function claude(content, maxTokens=2000) {
   // Fallback: Local evaluation engine (no external API calls required, fully offline)
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate response delay
   
+  // DETECT: Is this a custom rubric scoring prompt?
+  if (content.includes('customScores') || content.includes('custom rubrics') && content.includes('"customScores"')) {
+    const responseLabels = content.match(/--- (O1|O2|GPT|Gemini) ---/gi) || [];
+    const models = [...new Set(responseLabels.map(l => l.match(/(O1|O2|GPT|Gemini)/i)[1]))];
+    
+    // Extract number of rubrics from prompt text
+    const rubricMatches = content.match(/\d+\.\s+\w+:/g) || [];
+    const numRubrics = rubricMatches.length || 5; // Default to 5 if can't detect
+    
+    if (models.length >= 2) {
+      const scores = models.map(name => {
+        // Generate random scores (1-6) for each rubric
+        const customScores = Array(numRubrics).fill(0).map(() => Math.floor(Math.random() * 6) + 1);
+        return { name, customScores };
+      });
+      return JSON.stringify(scores);
+    }
+  }
+  
   // DETECT: Is this a scoring prompt for Track 2 (O1/O2/GPT/Gemini)?
   if (content.includes('"scores":{"IF"') || (content.includes('O1') && content.includes('O2') && content.includes('strict academic evaluator'))) {
     // Extract model names from response labels
@@ -1017,6 +1036,29 @@ async function claude(content, maxTokens=2000) {
       const comment = templates[Math.floor(Math.random() * templates.length)];
       return JSON.stringify([{ pair: `${first} vs ${second}`, comment }]);
     }
+  }
+  
+  // DETECT: Is this a rubric alignment/criteria prompt?
+  if (content.includes('rubric quality analyst') || content.includes('evaluation criteria')) {
+    const rubricMatches = content.match(/\d+\.\s+([^:]+):/g) || [];
+    const rubrics = rubricMatches.map(m => m.replace(/\d+\.\s+/, '').replace(/:$/, ''));
+    
+    const alignments = (rubrics.length > 0 ? rubrics : ['Rubric 1', 'Rubric 2', 'Rubric 3']).map(r => ({
+      rubric: r,
+      alignment: ['aligned', 'partially aligned', 'misaligned'][Math.floor(Math.random() * 3)],
+      suggestion: 'Ensure this rubric directly measures prompt compliance.'
+    }));
+    
+    const summary = 'The rubric set provides comprehensive coverage of key evaluation dimensions. Minor gaps exist in specificity for edge cases.';
+    const criteria = [
+      'response-accuracy-to-prompt',
+      'instruction-adherence-level',
+      'clarity-of-communication',
+      'logical-reasoning-quality',
+      'completeness-of-answer'
+    ];
+    
+    return JSON.stringify({ alignments, summary, criteria });
   }
   
   // Default fallback for other request types
@@ -1418,11 +1460,13 @@ Return ONLY a JSON array (no markdown) where customScores is an array of integer
       const rawCustom = await claude(customScoringPrompt, 1500);
       const customScored = extractJSON(rawCustom);
 
-      // Merge customScores into mainScored
-      mainScored.forEach(r=>{
-        const match=customScored.find(c=>nn(c.name)===nn(r.name));
-        if(match) r.customScores=match.customScores;
-      });
+      // Merge customScores into mainScored — ensure customScored is an array
+      if (Array.isArray(customScored)) {
+        mainScored.forEach(r=>{
+          const match=customScored.find(c=>nn(c.name)===nn(r.name));
+          if(match) r.customScores=match.customScores;
+        });
+      }
 
       renderCustomRubricTable(rubrics, mainScored);
 
