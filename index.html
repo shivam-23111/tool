@@ -933,30 +933,71 @@ async function claude(content, maxTokens=2000) {
   const apiKey = inputKey || DEFAULT_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Gemini API key is missing.');
 
-  const r = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      apiKey,
-      content,
-      maxTokens
-    })
-  });
+  async function fetchViaProxy() {
+    const r = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, content, maxTokens })
+    });
 
-  if (!r.ok) {
-    const errorData = await r.json().catch(() => null);
-    const errMsg = (errorData && errorData.error) ? errorData.error : `HTTP ${r.status}`;
-    throw new Error('Proxy Gemini error: ' + errMsg);
+    if (!r.ok) {
+      const errorData = await r.json().catch(() => null);
+      const errMsg = (errorData && errorData.error) ? errorData.error : `HTTP ${r.status}`;
+      throw new Error('Proxy Gemini error: ' + errMsg);
+    }
+
+    const d = await r.json();
+    if (!d || typeof d.text !== 'string') {
+      throw new Error('Invalid response from proxy Gemini API.');
+    }
+    return d.text;
   }
 
-  const d = await r.json();
-  if (!d || typeof d.text !== 'string') {
-    throw new Error('Invalid response from proxy Gemini API.');
+  async function fetchDirect() {
+    const endpoint = 'https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict';
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        instances: [{ content }],
+        parameters: { temperature: 0.0, max_output_tokens: Math.min(maxTokens, 3200) }
+      })
+    });
+
+    if (!r.ok) {
+      const errorData = await r.json().catch(() => null);
+      const errMsg = (errorData && errorData.error) ? errorData.error : `HTTP ${r.status}`;
+      throw new Error('Direct Gemini error: ' + errMsg);
+    }
+
+    const d = await r.json();
+    let text = '';
+    if (Array.isArray(d.predictions)) {
+      text = d.predictions.map(p => p.content || '').join('\n');
+    } else if (Array.isArray(d.output)) {
+      text = d.output.map(o => o.content || o.text || '').join('\n');
+    } else if (Array.isArray(d.candidates)) {
+      text = d.candidates.map(c => c.content || c.text || '').join('\n');
+    } else {
+      text = JSON.stringify(d);
+    }
+
+    return text;
   }
 
-  return d.text;
+  try {
+    return await fetchViaProxy();
+  } catch(proxyErr) {
+    console.warn('Proxy failed, trying direct Gemini call:', proxyErr.message);
+    try {
+      return await fetchDirect();
+    } catch(directErr) {
+      throw new Error('Proxy fallback failed: ' + directErr.message);
+    }
+  }
 }
 
 // ── Render helpers ────────────────────────────────────────────
