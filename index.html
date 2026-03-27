@@ -679,12 +679,19 @@ function extractJSON(raw) {
 }
 
 function runEvaluation() {
-  // Keep track toggle working even if evaluation backend is not wired.
   hideError();
+  const key = (document.getElementById('geminiApiKey')?.value || '').trim();
+  if (!key) {
+    showError('Please paste your Gemini API key first in the API Key field.');
+    return;
+  }
+
   setLoading(true, 'Running evaluation...');
+
+  // TODO: replace this placeholder with your real run/eval backend call.
   setTimeout(() => {
     setLoading(false);
-    alert('Evaluation flow is available once your API credentials and backend are configured.');
+    alert('API key detected, but no evaluation backend is wired yet in this demo.');
   }, 650);
 }
 
