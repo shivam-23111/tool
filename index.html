@@ -699,6 +699,8 @@ Prompt Correctness
 1-Does not address the prompt or relies entirely on incorrect information.
 `;
 
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyC2UsOg2uMCEwGfpyCtvBhocZ2o5fDwG5w';
+
 const COMPARE_RULES = `STRICT RULES for comment — ALL of these are mandatory, not optional. A comment that breaks any rule below is invalid.
 
 BANNED WORDS — never use any of these, not even once. This list is exhaustive and absolute:
@@ -927,7 +929,8 @@ function extractObj(raw) {
   catch(_){try{return Function('"use strict";return('+t+')')();}catch(e2){throw new Error('Object parse failed\n'+raw.slice(0,400));}}
 }
 async function claude(content, maxTokens=2000) {
-  const apiKey = (document.getElementById('geminiApiKey')?.value || '').trim();
+  const inputKey = (document.getElementById('geminiApiKey')?.value || '').trim();
+  const apiKey = inputKey || DEFAULT_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Gemini API key is missing.');
 
   const endpoint = 'https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict';
