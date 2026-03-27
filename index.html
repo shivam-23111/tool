@@ -935,8 +935,10 @@ function extractObj(raw) {
 }
 async function claude(content, maxTokens=2000) {
   // First, try to use OpenAI GPT API if key is available
-  const inputKey = (document.getElementById('geminiApiKey')?.value || '').trim();
-  const apiKey = inputKey || DEFAULT_OPENAI_API_KEY;
+  // Check both the top bar API key input and the refine panel API key input
+  const topKey = (document.getElementById('geminiApiKey')?.value || '').trim();
+  const refineKey = (document.getElementById('refineApiKey')?.value || '').trim();
+  const apiKey = refineKey || topKey || DEFAULT_OPENAI_API_KEY;
   
   if (apiKey && apiKey.startsWith('sk-')) {
     try {
@@ -1338,7 +1340,10 @@ Return ONLY a JSON array (no markdown):
     const sO2 = mainScored.find(r=>nn(r.name)==='o2') || mainScored.find(r=>nn(r.name).startsWith('o2'));
     if (!sO1 || !sO2) {
       const names = mainScored.map(r=>r.name).join(', ');
-      throw new Error('Could not find O1 or O2. Got names: ' + names + '. Name your cards exactly "O1" and "O2".');
+      const msg = !mainScored.length 
+        ? 'Error: No responses were scored. Make sure you filled in the O1 and O2 response cards with text.'
+        : `Error: Could not find O1 and O2 in scored responses. Got: ${names}. Make sure both cards are labeled exactly "O1" and "O2".`;
+      throw new Error(msg);
     }
     const winner = wscore(sO1)>=wscore(sO2)?sO1:sO2;
 
@@ -1594,6 +1599,11 @@ initMainCards();
 <!-- ── REFINE PANEL ── -->
 <div class="refine-panel" id="refinePanel">
   <div class="refine-inner">
+    <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+      <div style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">OpenAI API Key:</div>
+      <input type="password" id="refineApiKey" placeholder="Paste your OpenAI API key here (sk-...)" style="background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; width: 100%; outline: none; transition: border-color 0.2s; max-width: 500px;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+
     <div class="refine-heading">Refine Comment</div>
     <div class="refine-sub">Paste any comparison comment below. The tool detects rule violations and fixes only those — the meaning, winner, evidence, and dimension stay exactly as you wrote them.</div>
 
