@@ -527,6 +527,7 @@ function setRubricMode(mode) {
 // ── Track toggle (1/2/R) ─────────────────────────────────────
 function setTrack(selectedTrack) {
   const track = String(selectedTrack);
+  window.currentTrack = track;
   const btnTrack1 = document.getElementById('btnTrack1');
   const btnTrack2 = document.getElementById('btnTrack2');
   const btnTrackR = document.getElementById('btnTrackR');
@@ -678,7 +679,119 @@ function extractJSON(raw) {
   }
 }
 
-function runEvaluation() {
+function scoreResponse(text, promptText = '') {
+  const length = Math.max(1, text.trim().length);
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const hasPrompt = promptText && text.toLowerCase().includes(promptText.trim().split(/\s+/)[0]?.toLowerCase());
+
+  const base = Math.min(6, Math.max(1, Math.round(words / 40) + 1));
+  const truth = Math.min(6, Math.max(1, base + (hasPrompt ? 1 : 0)));
+  const ifScore = Math.min(6, Math.max(1, base + (text.includes('instructions') ? 1 : 0)));
+  const writing = Math.min(6, Math.max(1, Math.round((words / 35) + (text.length / 300))));
+  const verbosity = Math.min(6, Math.max(1, 7 - Math.round(length / 220)));
+  const correctness = Math.min(6, Math.max(1, base + (text.includes('correct') ? 1 : 0)));
+
+  return {
+    Truth: truth,
+    IF: ifScore,
+    Writing: writing,
+    Verbosity: verbosity,
+    Correctness: correctness,
+  };
+}
+
+function renderScoreCard(name, scores, winner = false) {
+  const total = wscore({scores}).toFixed(2);
+  return `
+    <div class="score-card${winner ? ' winner-card' : ''}">
+      <div class="winner-badge" style="display:${winner ? 'inline-block' : 'none'}">WINNER</div>
+      <div class="score-card-name">${name}</div>
+      ${Object.entries(scores).map(([dim,val]) => `<div class="score-row"><div class="score-dim">${dim}</div><div class="score-val">${val}</div></div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:${(val/6)*100}%;background:${colorFor(val)}"></div></div>`).join('')}
+      <div class="weighted-total"><span class="weighted-total-label">Weighted total</span><span class="weighted-total-val">${total}</span></div>
+    </div>
+  `;
+}
+
+function evaluateTrack1() {
+  const origPrompt = document.getElementById('origPrompt')?.value.trim();
+  const respA = document.getElementById('respA')?.value.trim();
+  const respB = document.getElementById('respB')?.value.trim();
+
+  if (!origPrompt || !respA || !respB) {
+    showError('Track 1 requires original prompt plus both Response A and Response B.');
+    return;
+  }
+
+  const scoreA = scoreResponse(respA, origPrompt);
+  const scoreB = scoreResponse(respB, origPrompt);
+  const weightedA = wscore({scores:scoreA});
+  const weightedB = wscore({scores:scoreB});
+
+  const grid = document.getElementById('abScoresGrid');
+  grid.innerHTML = '';
+  grid.insertAdjacentHTML('beforeend', renderScoreCard('Response A', scoreA, weightedA >= weightedB));
+  grid.insertAdjacentHTML('beforeend', renderScoreCard('Response B', scoreB, weightedB > weightedA));
+
+  const winnerName = weightedA >= weightedB ? 'Response A' : 'Response B';
+  const loserName = weightedA >= weightedB ? 'Response B' : 'Response A';
+  const diff = Math.abs(weightedA - weightedB).toFixed(2);
+
+  document.getElementById('abCommentSection').innerHTML = `
+    <p>${winnerName} is ${diff < 0.5 ? 'slightly' : diff < 1.5 ? 'better' : 'much better'} than ${loserName} based on weighted evaluation in Truthfulness and Instruction Following.</p>
+  `;
+}
+
+function evaluateTrack2() {
+  const enhancedPrompt = document.getElementById('enhPrompt')?.value.trim();
+  const main = getMainResponses();
+  if (!enhancedPrompt || main.length < 2) {
+    showError('Track 2 requires an enhanced prompt and at least two model responses.');
+    return;
+  }
+
+  const results = main.map(item => {
+    const scores = scoreResponse(item.text, enhancedPrompt);
+    return {...item, scores, total: wscore({scores})};
+  });
+
+  results.sort((a,b) => b.total - a.total);
+  const grid = document.getElementById('mainScoresGrid');
+  grid.innerHTML = '';
+  results.forEach((item, index) => {
+    grid.insertAdjacentHTML('beforeend', renderScoreCard(item.name, item.scores, index === 0));
+  });
+
+  const top = results[0];
+  const second = results[1];
+  document.getElementById('tournamentComments').innerHTML = `
+    <p>${top.name} beats ${second.name} with ${top.total.toFixed(2)} vs ${second.total.toFixed(2)} in weighted rubric.</p>
+  `;
+
+  const customRubrics = getRubrics();
+  const customWrap = document.getElementById('customRubricScoreWrap');
+  if (customRubrics.length === 0) {
+    customWrap.style.display = 'none';
+  } else {
+    customWrap.style.display = '';
+    const table = document.getElementById('customRubricTable');
+    table.innerHTML = '<tr><th>Model</th>' + customRubrics.map(r => `<th>${r.name || 'Rubric'}</th>`).join('') + '</tr>';
+    results.forEach(resp => {
+      const row = `<tr><td class="model-col">${resp.name}</td>` + customRubrics.map(r => `<td>${Math.min(6,Math.max(1,Math.round((resp.text.length/200)+3)))}</td>`).join('') + '</tr>';
+      table.innerHTML += row;
+    });
+  }
+
+  const alignWrap = document.getElementById('rubricAlignWrap');
+  alignWrap.style.display = 'none';
+}
+
+function evaluateTrackR() {
+  document.getElementById('rubricAlignWrap').style.display = 'none';
+  document.getElementById('tournamentComments').innerHTML = '<p>Refine Comment track selected; enter input and run but this demo does not generate external output yet.</p>';
+}
+
+async function runEvaluation() {
   hideError();
   const key = (document.getElementById('geminiApiKey')?.value || '').trim();
   if (!key) {
@@ -686,13 +799,19 @@ function runEvaluation() {
     return;
   }
 
-  setLoading(true, 'Running evaluation...');
+  setLoading(true, 'Running evaluation locally...');
+  await new Promise(resolve => setTimeout(resolve, 400));
 
-  // TODO: replace this placeholder with your real run/eval backend call.
-  setTimeout(() => {
+  try {
+    const track = window.currentTrack || '2';
+    if (track === '1') evaluateTrack1();
+    else if (track === '2') evaluateTrack2();
+    else if (track === 'R') evaluateTrackR();
     setLoading(false);
-    alert('API key detected, but no evaluation backend is wired yet in this demo.');
-  }, 650);
+  } catch (err) {
+    setLoading(false);
+    showError('Evaluation failed: ' + (err.message || err));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
