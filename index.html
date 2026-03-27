@@ -954,7 +954,7 @@ async function claude(content, maxTokens=2000) {
   }
 
   async function fetchDirect() {
-    const endpoint = 'https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict';
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:predict';
     const r = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -963,13 +963,16 @@ async function claude(content, maxTokens=2000) {
       },
       body: JSON.stringify({
         instances: [{ content }],
-        parameters: { temperature: 0.0, max_output_tokens: Math.min(maxTokens, 3200) }
+        parameters: {
+          temperature: 0.0,
+          max_output_tokens: Math.min(maxTokens, 3200)
+        }
       })
     });
 
     if (!r.ok) {
       const errorData = await r.json().catch(() => null);
-      const errMsg = (errorData && errorData.error) ? errorData.error : `HTTP ${r.status}`;
+      const errMsg = (errorData && errorData.error) ? (errorData.error.message || errorData.error) : `HTTP ${r.status}`;
       throw new Error('Direct Gemini error: ' + errMsg);
     }
 
@@ -989,13 +992,13 @@ async function claude(content, maxTokens=2000) {
   }
 
   try {
-    return await fetchViaProxy();
-  } catch(proxyErr) {
-    console.warn('Proxy failed, trying direct Gemini call:', proxyErr.message);
+    return await fetchDirect();
+  } catch (directErr) {
+    console.warn('Direct Gemini failed, trying proxy:', directErr.message);
     try {
-      return await fetchDirect();
-    } catch(directErr) {
-      throw new Error('Proxy fallback failed: ' + directErr.message);
+      return await fetchViaProxy();
+    } catch (proxyErr) {
+      throw new Error('Proxy fallback failed: ' + proxyErr.message);
     }
   }
 }
