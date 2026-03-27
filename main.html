@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemini Response Evaluator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #2a2f45;
+    --accent: #c8a96e;
+    --accent2: #7eb8c9;
+    --accent3: #a87ec9;
+    --text: #e8e4dc;
+    --muted: #6b7280;
+    --success: #6abf7b;
+    --danger: #e07070;
+    --warn: #e0a870;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 1000; opacity: 0.6;
+  }
+  
+  /* API Key Bar */
+  .api-key-bar {
+    background: var(--surface2);
+    padding: 12px 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+  .api-key-bar span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .api-key-bar input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    width: 350px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-key-bar input:focus { border-color: var(--accent); }
+
+  header { border-bottom: 1px solid var(--border); padding: 22px 48px; display: flex; align-items: baseline; gap: 16px; position: relative; z-index: 10; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 600; color: var(--accent); }
+  header span { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .main { max-width: 1160px; margin: 0 auto; padding: 32px 48px 100px; position: relative; z-index: 10;}
+
+  /* Phase blocks */
+  .phase-block { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 28px; overflow: hidden; }
+  .phase-header { background: var(--surface2); padding: 14px 22px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); }
+  .phase-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #0d0f14; font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .phase-title { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+  .phase-desc { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
+  .phase-body { padding: 20px 22px; }
+
+  .field-label { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 7px; margin-top: 16px; }
+  .field-label:first-child { margin-top: 0; }
+
+  textarea, input[type="text"] { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.78rem; line-height: 1.7; padding: 11px 13px; resize: vertical; transition: border-color 0.2s; outline: none; width: 100%; }
+  textarea:focus, input[type="text"]:focus { border-color: var(--accent); }
+  textarea::placeholder, input::placeholder { color: var(--muted); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  @media (max-width: 900px) { .four-col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .two-col, .four-col { grid-template-columns: 1fr; } }
+
+  /* Rubric rows */
+  .rubric-rows { display: flex; flex-direction: column; gap: 9px; }
+  .rubric-row { display: grid; grid-template-columns: 190px 1fr; gap: 9px; align-items: start; }
+  .rubric-row textarea { min-height: 52px; }
+
+  /* Response card */
+  .resp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .resp-card-top { display: flex; align-items: center; margin-bottom: 9px; }
+  .resp-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); }
+  .resp-card textarea { border: none; background: transparent; padding: 0; font-size: 0.75rem; min-height: 130px; resize: vertical; }
+  .resp-card textarea:focus { border: none; }
+
+  /* Buttons */
+  .btn { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border: none; cursor: pointer; border-radius: 5px; padding: 9px 18px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-run { background: var(--accent); color: #0d0f14; font-weight: 500; padding: 14px 44px; font-size: 0.78rem; }
+  .btn-run:hover { background: #ddbf80; }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
+  .actions { display: flex; justify-content: center; margin: 4px 0 44px; }
+
+  /* Built-in rubric note */
+  .rubric-note { font-size: 0.71rem; color: var(--muted); line-height: 1.6; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; margin-top: 12px; }
+  .rubric-note strong { color: var(--accent2); font-weight: 500; }
+  .dim-weights { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .dim-chip { font-family: 'DM Mono', monospace; font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+
+  /* Loading */
+  .loading { display: none; flex-direction: column; align-items: center; padding: 36px; gap: 12px; }
+  .loading.active { display: flex; }
+  .spinner { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+
+  .error-box { background: #1a0f0f; border: 1px solid var(--danger); border-radius: 6px; padding: 12px 16px; color: var(--danger); font-size: 0.78rem; margin-bottom: 16px; display: none; white-space: pre-wrap; }
+
+  /* Results */
+  #results { display: none; }
+  .results-divider { display: flex; align-items: center; gap: 14px; margin: 6px 0 24px; }
+  .results-divider::before, .results-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .results-divider span { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--accent); white-space: nowrap; }
+
+  /* Score card grid */
+  .scores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; animation: fadeUp 0.4s ease both; position: relative; }
+  .score-card.winner-card { border-color: var(--accent); }
+  .winner-badge { position: absolute; top: -9px; right: 12px; background: var(--accent); color: #0d0f14; font-family: 'DM Mono', monospace; font-size: 0.54rem; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; font-weight: 500; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .score-card-name { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent2); margin-bottom: 11px; }
+  .score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .score-dim { font-size: 0.72rem; color: var(--muted); }
+  .score-val { font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500; }
+  .score-bar-wrap { height: 2px; background: var(--border); border-radius: 2px; margin-bottom: 7px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 2px; }
+  .weighted-total { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .weighted-total-label { font-size: 0.7rem; color: var(--muted); }
+  .weighted-total-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; }
+
+  /* Custom rubric score table */
+  .rubric-score-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; font-size: 0.78rem; }
+  .rubric-score-table th { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; background: var(--surface2); }
+  .rubric-score-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .rubric-score-table tr:last-child td { border-bottom: none; }
+  .rubric-score-table td:first-child { color: var(--text); font-size: 0.75rem; }
+  .rubric-score-table .model-col { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; color: var(--accent2); }
+  .cell-score { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.82rem; }
+  .rubric-score-table tr:hover td { background: var(--surface2); }
+
+  /* Comparison blocks */
+  .comparison-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 16px 20px; margin-bottom: 12px; animation: fadeUp 0.4s ease both; }
+  .comparison-pair { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 7px; }
+  .comparison-text { font-size: 0.84rem; line-height: 1.75; color: var(--text); font-weight: 300; }
+
+  /* Rubric analysis */
+  .rubric-analysis-block { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 16px 20px; margin-bottom: 10px; animation: fadeUp 0.4s ease both; }
+  .rub-name { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 7px; }
+  .rub-name.aligned { color: var(--success); }
+  .rub-name.misaligned { color: var(--danger); }
+  .rub-name.partial { color: var(--warn); }
+  .rub-status-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.54rem; padding: 2px 7px; border-radius: 20px; margin-left: 7px; vertical-align: middle; }
+  .badge-aligned { background: #1a3322; color: var(--success); }
+  .badge-misaligned { background: #2a1515; color: var(--danger); }
+  .badge-partial { background: #2a2010; color: var(--warn); }
+  .rub-suggestion { font-size: 0.78rem; color: var(--text); line-height: 1.65; font-weight: 300; }
+  .rubric-summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin-bottom: 16px; font-size: 0.8rem; line-height: 1.7; color: var(--text); }
+
+  /* Criteria chips */
+  .criteria-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 32px; }
+  .criteria-chip { font-family: 'DM Mono', monospace; font-size: 0.66rem; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--accent3); color: var(--accent3); letter-spacing: 0.03em; animation: fadeUp 0.3s ease both; }
+
+  .section-gap { margin-bottom: 6px; }
+
+  /* Track toggle */
+  .track-toggle-bar { display: flex; align-items: center; gap: 14px; padding: 14px 48px; border-bottom: 1px solid var(--border); background: var(--surface2); position: relative; z-index: 10;}
+  .track-toggle-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .track-btn { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all 0.2s; }
+  .track-btn.active { background: var(--accent); color: #0d0f14; border-color: var(--accent); font-weight: 500; }
+  .track-btn:not(.active):hover { border-color: var(--accent2); color: var(--accent2); }
+  .track-divider { width: 1px; height: 18px; background: var(--border); }
+  .track-desc { font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
+  .track1-block { transition: opacity 0.25s, max-height 0.35s; overflow: hidden; }
+  .track1-block.hidden { opacity: 0; max-height: 0 !important; pointer-events: none; margin: 0 !important; }
+  .phase1-result { transition: opacity 0.25s; }
+  .phase1-result.hidden { display: none !important; }
+
+  /* Copy / Paste buttons */
+  .copy-btn { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { background: var(--surface2); color: var(--text); }
+  .copy-btn.copied { background: var(--success); color: #000; border-color: var(--success); }
+  .comparison-block-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .criteria-chip-wrap { display: flex; align-items: center; gap: 5px; animation: fadeUp 0.3s ease both; }
+  .criteria-chip-wrap .criteria-chip { animation: none; }
+
+  /* Refine comment mode */
+  .refine-panel { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; }
+  .refine-panel.active { display: block; }
+  .refine-inner { max-width: 780px; margin: 0 auto; padding: 40px 48px 100px; }
+  .refine-heading { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--accent); margin-bottom: 6px; }
+  .refine-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .refine-field-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .refine-btn { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border: none; cursor: pointer; border-radius: 5px; padding: 12px 32px; background: var(--accent); color: #0d0f14; font-weight: 500; transition: all 0.2s; margin-top: 16px; }
+  .refine-btn:hover { background: #ddbf80; }
+  .refine-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .refine-result-block { display: none; margin-top: 32px; border-top: 1px solid var(--border); padding-top: 28px; }
+  .refine-result-block.visible { display: block; }
+  .refine-result-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; }
+  .refine-output { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 6px; padding: 18px 22px; font-size: 0.88rem; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; }
+  .refine-violations { margin-top: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; }
+  .refine-violations-title { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warn); margin-bottom: 10px; }
+  .violation-item { font-size: 0.78rem; color: var(--text); line-height: 1.65; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; }
+  .violation-item:last-child { border-bottom: none; }
+  .violation-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); flex-shrink: 0; margin-top: 6px; }
+  .refine-copy-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .refine-loading { display: none; align-items: center; gap: 12px; padding: 20px 0; }
+  .refine-loading.active { display: flex; }
+
+  /* Rubric paste-all */
+  .rubric-paste-area { width: 100%; background: var(--surface); border: 1px dashed var(--accent2); border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; line-height: 1.7; padding: 12px 14px; resize: vertical; min-height: 80px; outline: none; transition: border-color 0.2s; margin-bottom: 10px; }
+  .rubric-paste-area:focus { border-color: var(--accent); }
+  .rubric-paste-area::placeholder { color: var(--muted); }
+  .rubric-parse-btn { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 16px; border-radius: 5px; cursor: pointer; border: 1px solid var(--accent2); color: var(--accent2); background: transparent; transition: all 0.18s; margin-bottom: 14px; }
+  .rubric-parse-btn:hover { background: var(--accent2); color: #0d0f14; }
+  .rubric-parse-btn.done { border-color: var(--success); color: var(--success); }
+  .rubric-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .rubric-mode-btn { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); background: transparent; transition: all 0.18s; }
+  .rubric-mode-btn.active { border-color: var(--accent); color: var(--accent); background: transparent; }
+
+  /* Multi-pass refine */
+  .pass-tracker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; min-height: 22px; }
+  .pass-badge { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+  .pass-badge.running { border-color: var(--accent); color: var(--accent); }
+  .pass-badge.clean   { border-color: var(--success); color: var(--success); }
+  .pass-badge.fixed   { border-color: var(--accent2); color: var(--accent2); }
+  .clean-banner { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--success); padding: 6px 14px; border: 1px solid var(--success); border-radius: 5px; margin-bottom: 12px; display: none; }
+  .clean-banner.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="api-key-bar">
+  <span>Gemini API Key:</span>
+  <input type="password" id="geminiApiKey" placeholder="Paste your Google AI Studio API key here...">
+</div>
+
+<header>
+  <h1>Response Evaluator</h1>
+  <span>Powered by Gemini 1.5 Pro</span>
+</header>
+
+
+<div class="track-toggle-bar">
+  <span class="track-toggle-label">Track</span>
+  <button class="track-btn" id="btnTrack1" onclick="setTrack(1)">1 — Original Prompt A/B</button>
+  <button class="track-btn active" id="btnTrack2" onclick="setTrack(2)">2 — Enhanced Prompt</button>
+  <button class="track-btn" id="btnTrackR" onclick="setTrack('R')" style="border-color:var(--accent3);color:var(--accent3)">R — Refine Comment</button>
+  <div class="track-divider"></div>
+  <span class="track-desc" id="trackDesc">Track 2 only — Enhanced Prompt, O1/O2/GPT/Gemini, Rubrics</span>
+</div>
+
+<div class="main">  <div class="phase-block track1-block hidden" id="track1InputBlock">
+    <div class="phase-header">
+      <div class="phase-num">1</div>
+      <div class="phase-title">Original Prompt — Response A vs B</div>
+      <div class="phase-desc">Evaluate and compare two baseline responses</div>
+    </div>
+    <div class="phase-body">
+      <div class="field-label">Original Prompt</div>
+      
+      <textarea id="origPrompt" rows="4" placeholder="Paste the original prompt here..."></textarea>
+
+      <div class="two-col" style="margin-top:14px">
+        <div>
+          <div class="field-label">Response A</div>
+          <div class="resp-card">
+            <div class="resp-card-top"><span class="resp-label">Response A</span></div>
+            <textarea id="respA" rows="8" placeholder="Paste Response A here..."></textarea>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Response B</div>
+          <div class="resp-card">
+            <div class="resp-card-top"><span class="resp-label">Response B</span></div>
+            <textarea id="respB" rows="8" placeholder="Paste Response B here..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num">2</div>
+      <div class="phase-title">Enhanced Prompt — O1, O2, GPT, Gemini</div>
+      <div class="phase-desc">Tournament: O1 vs O2 → winner vs GPT and Gemini</div>
+    </div>
+    <div class="phase-body">
+      <div class="field-label">Enhanced Prompt</div>
+      
+      <textarea id="enhPrompt" rows="4" placeholder="Paste the enhanced prompt here..."></textarea>
+
+      <div class="field-label" style="margin-top:16px">Responses — name cards exactly O1, O2, GPT, Gemini</div>
+      <div class="four-col" id="mainResponsesGrid">
+        </div>
+
+      <div class="rubric-note">
+        <strong>Built-in scoring rubric</strong> — 5 dimensions, 1 to 6 scale.
+        <div class="dim-weights">
+          <span class="dim-chip">Instruction Following 25%</span>
+          <span class="dim-chip">Truthfulness 25%</span>
+          <span class="dim-chip">Prompt Correctness 20%</span>
+          <span class="dim-chip">Writing Quality 15%</span>
+          <span class="dim-chip">Verbosity 15%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num">3</div>
+      <div class="phase-title">Your 5 Custom Rubrics</div>
+      <div class="phase-desc">Scored 1–6 for O1/O2/GPT/Gemini · Alignment check · Criteria generation</div>
+    </div>
+    <div class="phase-body">
+      <div class="rubric-toggle-row">
+        <button class="rubric-mode-btn active" id="rubricBtnPaste" onclick="setRubricMode('paste')">Paste All at Once</button>
+        <button class="rubric-mode-btn" id="rubricBtnManual" onclick="setRubricMode('manual')">Fill Individually</button>
+      </div>
+
+      <div id="rubricPasteMode">
+        <textarea class="rubric-paste-area" id="rubricRawPaste" rows="6" placeholder="Paste all rubric text here — Rubric 1, Rubric Name, Rubric Description, Rubric 2... the tool will extract them automatically"></textarea>
+        <button class="rubric-parse-btn" id="rubricParseBtn" onclick="parseRubrics()">⇩ Extract Rubrics</button>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:12px" id="rubricParseStatus"></div>
+      </div>
+
+      <div id="rubricManualMode" style="display:none">
+        <div class="rubric-rows" id="rubricRows"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="actions">
+    <button class="btn btn-run" id="runBtn" onclick="runEvaluation()">Evaluate All</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-msg" id="loadingMsg">Starting evaluation...</div>
+  </div>
+
+  <div id="results">
+
+    <div class="phase1-result hidden" id="track1ResultBlock">
+    <div class="results-divider"><span>Phase 1 — Response A vs B Scores</span></div>
+    <div class="scores-grid" id="abScoresGrid"></div>
+    <div class="results-divider"><span>Phase 1 — Comparison Comment</span></div>
+    <div id="abCommentSection"></div>
+    </div>
+
+    <div class="results-divider"><span>Phase 2 — Built-in Rubric Scores</span></div>
+    <div class="scores-grid" id="mainScoresGrid"></div>
+
+    <div class="results-divider"><span>Phase 2 — Tournament Comparison Comments</span></div>
+    <div id="tournamentComments"></div>
+
+    <div id="customRubricScoreWrap" style="display:none">
+      <div class="results-divider"><span>Phase 3 — Custom Rubric Scores (1–6)</span></div>
+      <table class="rubric-score-table" id="customRubricTable"></table>
+    </div>
+
+    <div id="rubricAlignWrap" style="display:none">
+      <div class="results-divider"><span>Phase 3 — Rubric Alignment Check</span></div>
+      <div class="rubric-summary-box" id="rubricSummaryBox"></div>
+      <div id="rubricAnalysisSection"></div>
+      <div class="results-divider"><span>Phase 3 — Generated Criteria</span></div>
+      <div class="criteria-grid" id="criteriaGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DIMS = [
+  { key: 'Truth',       label: 'Truthfulness',          weight: 0.25 },
+  { key: 'IF',          label: 'Instruction Following', weight: 0.25 },
+  { key: 'Writing',     label: 'Writing Quality',       weight: 0.15 },
+  { key: 'Verbosity',   label: 'Verbosity',             weight: 0.15 },
+  { key: 'Correctness', label: 'Prompt Correctness',    weight: 0.20 },
+];
+
+const RUBRIC_TEXT = `
+SCORING RUBRIC (all dimensions scored 1-6):
+
+Truthfulness
+6-Entirely accurate, well-supported, free of factual errors.
+5-Factually accurate with only negligible omissions.
+4-Generally accurate but includes minor factual errors or weakly supported statements.
+3-Mix of correct information and noticeable factual errors.
+2-Multiple factual inaccuracies make it largely unreliable.
+1-Major factual errors, fabrications, or claims contradicting well-established facts.
+
+Instruction Following (IF)
+6-Fully follows all instructions; every element addressed; format matches.
+5-Mostly follows; minor missing optional steps.
+4-Partially follows; misses at least one important required element.
+3-Follows some instructions but ignores central requirement(s).
+2-Attempts to follow but misunderstands core instruction(s).
+1-Completely fails to follow instructions.
+
+Writing Quality
+6-Clear, concise, professional; excellent structure and tone.
+5-Good writing; minor phrasing or organisation issues.
+4-Understandable but awkward structure or inconsistent tone.
+3-Hard to follow; grammar or clarity issues.
+2-Poor grammar or structure makes content difficult to use.
+1-Unintelligible or unacceptable writing.
+
+Verbosity
+6-Delivers exactly the needed level of detail, nothing missing, nothing extra.
+5-Required information with appropriate detail and minimal excess.
+4-Sufficient but lacks minor explanations that would improve clarity.
+3-Answers correctly but includes unnecessary detail.
+2-Includes excessive explanation that could be heavily reduced.
+1-Substantial unnecessary detail, repetition, or tangents.
+
+Prompt Correctness
+6-Completely and correctly answers all parts with all required steps present.
+5-Correct answer but omits minor steps or explanations.
+4-Addresses the prompt but misses a key step or includes slightly inaccurate information.
+3-Attempts to answer but reaches incorrect conclusion or relies on outdated information.
+2-Invalid approach that fails to meaningfully solve the problem.
+1-Does not address the prompt or relies entirely on incorrect information.
+`;
+
+const COMPARE_RULES = `STRICT RULES for comment — ALL of these are mandatory, not optional. A comment that breaks any rule below is invalid.
+
+BANNED WORDS — never use any of these, not even once. This list is exhaustive and absolute:
+additionally, moreover, furthermore, conversely, significantly, robust, notably, seamlessly, ultimately, pivotal, commendable, nuance, nuanced, meticulous, meticulously, comprehensively, comprehensive, in conclusion, in summary, leverage, leverages, leveraged, demonstrates a clear, let me, overall the, overall both, overall this,
+streamline, streamlines, streamlined, fundamentally, utilize, utilizes, utilized, intricate, optimize, optimizes, optimized, facilitate, facilitates, inherently, nevertheless, exemplary, impeccable, underpinning, underpinnings, efficacy, realm, encompass, encompasses, consequently, showcases, showcase, substantiate, exemplify, proficient, delve, it is important to note, it is worth noting, holistic, paramount, subsequently, in summary
+
+BANNED OPENING STRUCTURES — never start a comment with any of these:
+- "Both models provide...", "Both responses provide...", "Both models demonstrate...", "Both responses demonstrate...", "Both models exhibit...", "Both responses exhibit...", "Each response provides...", "Each response demonstrates...", "Overall, both...", "Overall, the..."
+- "While Response A's...", "While Response B's..." — do not open with a subordinate clause about one response
+- "First... Second...", "Firstly... Secondly...", any numbered listing of reasons
+- Any sentence that begins with "First,", "Second,", "Third,", "Fourth,", "Firstly,", "Secondly," — even mid-comment, do not use ordinal sentence starters
+- "The response should...", "The response must...", "Evaluates whether...", "Assesses whether..."
+- Do NOT start with "I" as the first word
+
+LANGUAGE RULES:
+- Plain natural human language, zero AI sound
+- No bold, no latex, no em dashes, no markdown
+- Use actual model names — never say Response 1, Response 2, Response A, or Response B
+- Use Indian English spelling (behaviour, labelled, colour, organise, etc.)
+
+DIMENSION RULE (MANDATORY — comment is invalid without this):
+- You MUST name at least one dimension explicitly by its exact label: Instruction Following, Truthfulness, Prompt Correctness, Writing Quality, or Verbosity
+- Simply saying one is better is not enough — you must say WHICH dimension makes it better
+- This is non-negotiable, every single comment must contain at least one of these five dimension names
+
+TIED SCORES RULE:
+- If weighted totals are equal or within 0.05, you CANNOT use the overall score to decide the winner
+- In a tie, dig into individual dimension scores and find where they differ
+- Base your winner decision on that specific differing dimension
+- If all dimension scores are identical, find concrete textual evidence of quality difference in the actual responses
+
+WINNER RULE:
+- Never declare a tie — always pick one clear winner
+- Always state the magnitude: slightly better, better, or much better
+- The comment MUST open with who is better than whom — winner and loser names must appear in the very first sentence
+- Format: "[Name] is [slightly better / better / much better] than [Name] because..."
+- Do not bury the winner declaration in the middle or end — it must be the opening line
+
+HEDGING RULE:
+- Never use 4 or more hedging words in a single comment
+- Hedging words to count: may, might, could, appears, seems, suggests, arguably, somewhat, perhaps, possibly
+- One or two hedges are acceptable. Three is borderline. Four or more is a violation.
+
+SENTENCE STRUCTURE RULE:
+- Vary sentence lengths deliberately — mix one short punchy sentence with one longer explanatory sentence
+- Never write 3 or more sentences all the same approximate length
+- Uniform sentence length is flagged as an AI pattern
+- Do NOT use ordinal/sequential words first, second, third, fourth, firstly, secondly anywhere in the comment — this includes mid-sentence usage like "first prove X before Y" or "first ... then ..." — always rephrase using "the prompt required X before Y" or "X then Y" instead
+
+CONTENT RULES — be concrete, not evaluative:
+- Lead with the concrete gap, not a summary: name what the losing response does wrong specifically
+- Name exact behaviours, not qualities: say what step was skipped, what was wrong, what the prompt asked for that was violated
+- Say exactly where the winning response does it correctly
+- One decisive reason only — do not enumerate multiple reasons with First/Second structure
+- Reference the prompt constraint explicitly: what did the prompt ask for, what did each response do about it
+- Template to follow: [What the losing response does wrong specifically] + [What the prompt asked for] + [What the winning response does instead]
+
+EVIDENCE RULE:
+- Cite what the response actually did or failed to do — specific, not vague
+- No praise words: do not use impressive, well-structured, thorough, rigorous, excellent
+- No vague quality words: do not use clear, robust, nuanced, comprehensive, coherent, intricate, proficient
+- 2 to 5 sentences — plain prose only, no bullet points or headers inside the comment`;
+
+
+// ── Rubric mode toggle ────────────────────────────────────────
+function setRubricMode(mode) {
+  const pasteDiv  = document.getElementById('rubricPasteMode');
+  const manualDiv = document.getElementById('rubricManualMode');
+  const btnPaste  = document.getElementById('rubricBtnPaste');
+  const btnManual = document.getElementById('rubricBtnManual');
+  if (mode === 'paste') {
+    pasteDiv.style.display  = '';
+    manualDiv.style.display = 'none';
+    btnPaste.classList.add('active');
+    btnManual.classList.remove('active');
+  } else {
+    pasteDiv.style.display  = 'none';
+    manualDiv.style.display = '';
+    btnManual.classList.add('active');
+    btnPaste.classList.remove('active');
+  }
+}
+
+// ── Parse pasted rubric text ──────────────────────────────────
+function parseRubrics() {
+  const raw = document.getElementById('rubricRawPaste').value.trim();
+  if (!raw) { alert('Please paste rubric text first.'); return; }
+
+  const parsed = extractRubricsFromText(raw);
+
+  if (parsed.length === 0) {
+    document.getElementById('rubricParseStatus').textContent = 'Could not find any rubrics. Check your text has "Rubric Name" and "Rubric Description" sections.';
+    return;
+  }
+
+  // Fill the individual fields
+  parsed.forEach((r, i) => {
+    const nameEl = document.getElementById('rubName' + i);
+    const descEl = document.getElementById('rubDesc' + i);
+    if (nameEl) nameEl.value = r.name || '';
+    if (descEl) descEl.value = r.desc || '';
+  });
+
+  const btn = document.getElementById('rubricParseBtn');
+  btn.textContent = '✓ Extracted ' + parsed.length + ' rubric(s)';
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = '⇩ Extract Rubrics'; btn.classList.remove('done'); }, 2500);
+
+  document.getElementById('rubricParseStatus').textContent =
+    'Extracted: ' + parsed.map((r,i) => 'Rubric '+(i+1)+' — '+(r.name||'(no name)')).join(' | ');
+
+  setRubricMode('manual');
+}
+
+function extractRubricsFromText(text) {
+  const results = [];
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const rubricStarts = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^Rubric\s+[1-5]\s*$/i.test(lines[i].trim())) rubricStarts.push(i);
+  }
+
+  for (let r = 0; r < rubricStarts.length; r++) {
+    const startLine = rubricStarts[r] + 1;
+    const endLine   = rubricStarts[r + 1] !== undefined ? rubricStarts[r + 1] : lines.length;
+    const section   = lines.slice(startLine, endLine);
+
+    let name = '';
+    let desc = '';
+    let mode = null;
+
+    for (let i = 0; i < section.length; i++) {
+      const line = section[i];
+      const trimmed = line.trim();
+
+      if (/^Rubric Name\s*$/i.test(trimmed)) { mode = 'name'; continue; }
+      if (/^Rubric Description\s*$/i.test(trimmed)) { mode = 'desc'; continue; }
+      if (/^Justification Mismatch:/i.test(trimmed)) { continue; }
+      if (/^\*\s*$/.test(trimmed) || trimmed === '') { continue; }
+
+      const clean = trimmed.replace(/^[\*\-•]\s*/, '').trim();
+      if (!clean) continue;
+
+      if (mode === 'name' && !name) name = clean;
+      else if (mode === 'desc') desc = desc ? desc + ' ' + clean : clean;
+    }
+
+    if (name || desc) results.push({ name: name.slice(0, 200), desc: desc.slice(0, 1000) });
+  }
+  return results.slice(0, 5);
+}
+
+// ── Rubric rows init ──────────────────────────────────────────
+function initRubricRows() {
+  const c = document.getElementById('rubricRows');
+  for (let i = 0; i < 5; i++) {
+    const row = document.createElement('div');
+    row.className = 'rubric-row';
+    row.innerHTML = `<input type="text" id="rubName${i}" placeholder="Rubric ${i+1} name" /><textarea id="rubDesc${i}" rows="2" placeholder="Rubric ${i+1} description..."></textarea>`;
+    c.appendChild(row);
+  }
+}
+function getRubrics() {
+  return Array.from({length:5}, (_,i) => ({
+    name: (document.getElementById('rubName'+i)?.value||'').trim(),
+    desc: (document.getElementById('rubDesc'+i)?.value||'').trim()
+  })).filter(r => r.name||r.desc);
+}
+
+// ── Main response cards (fixed 4) ────────────────────────────
+const MAIN_MODELS = ['O1','O2','GPT','Gemini'];
+function initMainCards() {
+  const grid = document.getElementById('mainResponsesGrid');
+  MAIN_MODELS.forEach(name => {
+    const card = document.createElement('div');
+    card.className = 'resp-card';
+    card.innerHTML = `<div class="resp-card-top"><span class="resp-label">${name}</span></div><textarea id="mainText_${name}" rows="9" placeholder="Paste ${name} response..."></textarea>`;
+    grid.appendChild(card);
+  });
+}
+function getMainResponses() {
+  return MAIN_MODELS.map(name => ({
+    name,
+    text: (document.getElementById('mainText_'+name)?.value||'').trim()
+  })).filter(r => r.text);
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function showError(msg) { const b=document.getElementById('errorBox'); b.textContent=msg; b.style.display='block'; }
+function hideError() { document.getElementById('errorBox').style.display='none'; }
+function setLoading(on, msg) { document.getElementById('loading').classList.toggle('active',on); if(msg) document.getElementById('loadingMsg').textContent=msg; }
+function colorFor(s) { return s>=5?'#6abf7b':s>=4?'#c8a96e':s>=3?'#e0a870':'#e07070'; }
+function wscore(r) { return DIMS.reduce((sum,d)=>sum+(r.scores[d.key]||0)*d.weight, 0); }
+
+function extractJSON(raw) {
+  let t = raw.replace(/
+http://googleusercontent.com/immersive_entry_chip/0
+http://googleusercontent.com/immersive_entry_chip/1
