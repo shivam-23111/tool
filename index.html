@@ -970,6 +970,40 @@ async function claude(content, maxTokens=2000) {
   // Fallback: Local evaluation engine (no external API calls required, fully offline)
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate response delay
   
+  // DETECT: Is this a refine comment prompt?
+  if (content.includes('"violations"') || (content.includes('RULES TO ENFORCE') && content.includes('refined_comment'))) {
+    // Extract the comment to be refined
+    const commentMatch = content.match(/COMMENT:\s*"([^"]+)"/i);
+    let originalComment = commentMatch ? commentMatch[1] : content.slice(-200);
+    
+    // Simple local refining: just fix obvious banned words
+    let refined = originalComment;
+    const bannedWords = ['additionally', 'moreover', 'furthermore', 'conversely', 'significantly', 'robust', 'notably', 'seamlessly', 'ultimately', 'pivotal'];
+    
+    let violations = [];
+    bannedWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      if (regex.test(refined)) {
+        violations.push({ rule: 'BANNED_WORDS', problem: word });
+        refined = refined.replace(regex, ''); // Remove the word
+      }
+    });
+    
+    // Check for "Both/Overall" openings
+    if (/^(both|overall|while)\s+/i.test(refined)) {
+      const problem = refined.match(/^[^.!?]+/)[0];
+      violations.push({ rule: 'BANNED_OPENING', problem });
+      // Rephrase opening
+      refined = refined.replace(/^both\s+/i, '').replace(/^overall\s+/i, '').replace(/^while\s+/i, '');
+    }
+    
+    return JSON.stringify({
+      violations: violations.length > 0 ? violations : [{ rule: 'CLEAN', problem: 'No violations found' }],
+      refined_comment: refined || originalComment,
+      is_clean: violations.length === 0
+    });
+  }
+  
   // DETECT: Is this a custom rubric scoring prompt?
   if (content.includes('customScores') || content.includes('custom rubrics') && content.includes('"customScores"')) {
     const responseLabels = content.match(/--- (O1|O2|GPT|Gemini) ---/gi) || [];
