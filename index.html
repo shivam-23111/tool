@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Response Evaluator</title>
+<title>Response Evaluator</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -27,57 +27,67 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
     pointer-events: none; z-index: 1000; opacity: 0.6;
   }
-  
-  /* API Key Bar */
-  .api-key-bar {
-    background: var(--surface2);
-    padding: 12px 48px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--border);
-    position: relative;
-    z-index: 10;
-  }
-  .api-key-bar span {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .api-key-bar input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 6px 12px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    width: 350px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .api-key-bar input:focus { border-color: var(--accent); }
-
-  header { border-bottom: 1px solid var(--border); padding: 22px 48px; display: flex; align-items: baseline; gap: 16px; position: relative; z-index: 10; }
+  header { border-bottom: 1px solid var(--border); padding: 22px 48px; display: flex; align-items: baseline; gap: 16px; }
   header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 600; color: var(--accent); }
   header span { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
-  .main { max-width: 1160px; margin: 0 auto; padding: 32px 48px 100px; position: relative; z-index: 10;}
+  .main { max-width: 1160px; margin: 0 auto; padding: 32px 48px 100px; }
 
   /* Phase blocks */
-  .phase-block { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 28px; overflow: hidden; }
-  .phase-header { background: var(--surface2); padding: 14px 22px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); }
-  .phase-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #0d0f14; font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .phase-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .phase-header {
+    background: var(--surface2);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0d0f14;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
   .phase-title { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
   .phase-desc { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
   .phase-body { padding: 20px 22px; }
 
-  .field-label { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 7px; margin-top: 16px; }
+  .field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 7px;
+    margin-top: 16px;
+  }
   .field-label:first-child { margin-top: 0; }
 
-  textarea, input[type="text"] { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.78rem; line-height: 1.7; padding: 11px 13px; resize: vertical; transition: border-color 0.2s; outline: none; width: 100%; }
+  textarea, input[type="text"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    padding: 11px 13px;
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+    width: 100%;
+  }
   textarea:focus, input[type="text"]:focus { border-color: var(--accent); }
   textarea::placeholder, input::placeholder { color: var(--muted); }
 
@@ -178,80 +188,316 @@
   .section-gap { margin-bottom: 6px; }
 
   /* Track toggle */
-  .track-toggle-bar { display: flex; align-items: center; gap: 14px; padding: 14px 48px; border-bottom: 1px solid var(--border); background: var(--surface2); position: relative; z-index: 10;}
-  .track-toggle-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-  .track-btn { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all 0.2s; }
-  .track-btn.active { background: var(--accent); color: #0d0f14; border-color: var(--accent); font-weight: 500; }
-  .track-btn:not(.active):hover { border-color: var(--accent2); color: var(--accent2); }
-  .track-divider { width: 1px; height: 18px; background: var(--border); }
-  .track-desc { font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
-  .track1-block { transition: opacity 0.25s, max-height 0.35s; overflow: hidden; }
-  .track1-block.hidden { opacity: 0; max-height: 0 !important; pointer-events: none; margin: 0 !important; }
-  .phase1-result { transition: opacity 0.25s; }
-  .phase1-result.hidden { display: none !important; }
+  .track-toggle-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .track-toggle-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .track-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .track-btn.active {
+    background: var(--accent);
+    color: #0d0f14;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .track-btn:not(.active):hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .track-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+  }
+  .track-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .track1-block {
+    transition: opacity 0.25s, max-height 0.35s;
+    overflow: hidden;
+  }
+  .track1-block.hidden {
+    opacity: 0;
+    max-height: 0 !important;
+    pointer-events: none;
+    margin: 0 !important;
+  }
+  /* Results phase 1 hidden when track1 off */
+  .phase1-result {
+    transition: opacity 0.25s;
+  }
+  .phase1-result.hidden {
+    display: none !important;
+  }
 
   /* Copy / Paste buttons */
-  .copy-btn { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
-  .copy-btn:hover { background: var(--surface2); color: var(--text); }
-  .copy-btn.copied { background: var(--success); color: #000; border-color: var(--success); }
-  .comparison-block-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-  .criteria-chip-wrap { display: flex; align-items: center; gap: 5px; animation: fadeUp 0.3s ease both; }
-  .criteria-chip-wrap .criteria-chip { animation: none; }
+  .copy-btn, 
+
+  
+
+  /* Comparison block header row */
+  .comparison-block-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+
+  /* Criteria chip with copy */
+  .criteria-chip-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    animation: fadeUp 0.3s ease both;
+  }
+  .criteria-chip-wrap .criteria-chip {
+    animation: none;
+  }
+
+  
 
   /* Refine comment mode */
-  .refine-panel { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; }
+  .refine-panel {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 500;
+    overflow-y: auto;
+  }
   .refine-panel.active { display: block; }
-  .refine-inner { max-width: 780px; margin: 0 auto; padding: 40px 48px 100px; }
-  .refine-heading { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--accent); margin-bottom: 6px; }
-  .refine-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
-  .refine-field-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .refine-btn { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border: none; cursor: pointer; border-radius: 5px; padding: 12px 32px; background: var(--accent); color: #0d0f14; font-weight: 500; transition: all 0.2s; margin-top: 16px; }
+  .refine-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 48px 100px;
+  }
+  .refine-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .refine-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .refine-field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .refine-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 12px 32px;
+    background: var(--accent);
+    color: #0d0f14;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-top: 16px;
+  }
   .refine-btn:hover { background: #ddbf80; }
   .refine-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .refine-result-block { display: none; margin-top: 32px; border-top: 1px solid var(--border); padding-top: 28px; }
+  .refine-result-block {
+    display: none;
+    margin-top: 32px;
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+  }
   .refine-result-block.visible { display: block; }
-  .refine-result-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; }
-  .refine-output { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 6px; padding: 18px 22px; font-size: 0.88rem; line-height: 1.8; color: var(--text); font-weight: 300; white-space: pre-wrap; }
-  .refine-violations { margin-top: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; }
-  .refine-violations-title { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warn); margin-bottom: 10px; }
-  .violation-item { font-size: 0.78rem; color: var(--text); line-height: 1.65; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; }
+  .refine-result-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 10px;
+  }
+  .refine-output {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 6px;
+    padding: 18px 22px;
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--text);
+    font-weight: 300;
+    white-space: pre-wrap;
+  }
+  .refine-violations {
+    margin-top: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .refine-violations-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--warn);
+    margin-bottom: 10px;
+  }
+  .violation-item {
+    font-size: 0.78rem;
+    color: var(--text);
+    line-height: 1.65;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
   .violation-item:last-child { border-bottom: none; }
-  .violation-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); flex-shrink: 0; margin-top: 6px; }
-  .refine-copy-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .violation-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .refine-copy-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
   .refine-loading { display: none; align-items: center; gap: 12px; padding: 20px 0; }
   .refine-loading.active { display: flex; }
 
   /* Rubric paste-all */
-  .rubric-paste-area { width: 100%; background: var(--surface); border: 1px dashed var(--accent2); border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.75rem; line-height: 1.7; padding: 12px 14px; resize: vertical; min-height: 80px; outline: none; transition: border-color 0.2s; margin-bottom: 10px; }
+  .rubric-paste-area {
+    width: 100%;
+    background: var(--surface);
+    border: 1px dashed var(--accent2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.7;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
   .rubric-paste-area:focus { border-color: var(--accent); }
   .rubric-paste-area::placeholder { color: var(--muted); }
-  .rubric-parse-btn { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 16px; border-radius: 5px; cursor: pointer; border: 1px solid var(--accent2); color: var(--accent2); background: transparent; transition: all 0.18s; margin-bottom: 14px; }
+  .rubric-parse-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    background: transparent;
+    transition: all 0.18s;
+    margin-bottom: 14px;
+  }
   .rubric-parse-btn:hover { background: var(--accent2); color: #0d0f14; }
   .rubric-parse-btn.done { border-color: var(--success); color: var(--success); }
-  .rubric-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .rubric-mode-btn { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); background: transparent; transition: all 0.18s; }
+  .rubric-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .rubric-mode-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.18s;
+  }
   .rubric-mode-btn.active { border-color: var(--accent); color: var(--accent); background: transparent; }
 
   /* Multi-pass refine */
-  .pass-tracker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; min-height: 22px; }
-  .pass-badge { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+  .pass-tracker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    min-height: 22px;
+  }
+  .pass-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
   .pass-badge.running { border-color: var(--accent); color: var(--accent); }
   .pass-badge.clean   { border-color: var(--success); color: var(--success); }
   .pass-badge.fixed   { border-color: var(--accent2); color: var(--accent2); }
-  .clean-banner { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--success); padding: 6px 14px; border: 1px solid var(--success); border-radius: 5px; margin-bottom: 12px; display: none; }
+  .clean-banner {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--success);
+    padding: 6px 14px;
+    border: 1px solid var(--success);
+    border-radius: 5px;
+    margin-bottom: 12px;
+    display: none;
+  }
   .clean-banner.visible { display: block; }
 </style>
 </head>
 <body>
 
-<div class="api-key-bar">
-  <span>Gemini API Key:</span>
-  <input type="password" id="geminiApiKey" placeholder="Paste your Google AI Studio API key here...">
-</div>
-
 <header>
   <h1>Response Evaluator</h1>
-  <span>Powered by Gemini 1.5 Pro</span>
+  <span>AI Quality Assessment Tool</span>
 </header>
 
 
@@ -264,7 +510,8 @@
   <span class="track-desc" id="trackDesc">Track 2 only — Enhanced Prompt, O1/O2/GPT/Gemini, Rubrics</span>
 </div>
 
-<div class="main">  <div class="phase-block track1-block hidden" id="track1InputBlock">
+<div class="main">  <!-- ── PHASE 1: Original Prompt + A/B ── -->
+  <div class="phase-block track1-block hidden" id="track1InputBlock">
     <div class="phase-header">
       <div class="phase-num">1</div>
       <div class="phase-title">Original Prompt — Response A vs B</div>
@@ -294,6 +541,7 @@
     </div>
   </div>
 
+  <!-- ── PHASE 2: Enhanced Prompt + O1/O2/GPT/Gemini ── -->
   <div class="phase-block">
     <div class="phase-header">
       <div class="phase-num">2</div>
@@ -307,7 +555,8 @@
 
       <div class="field-label" style="margin-top:16px">Responses — name cards exactly O1, O2, GPT, Gemini</div>
       <div class="four-col" id="mainResponsesGrid">
-        </div>
+        <!-- cards inserted by JS -->
+      </div>
 
       <div class="rubric-note">
         <strong>Built-in scoring rubric</strong> — 5 dimensions, 1 to 6 scale.
@@ -322,6 +571,7 @@
     </div>
   </div>
 
+  <!-- ── PHASE 3: Custom Rubrics ── -->
   <div class="phase-block">
     <div class="phase-header">
       <div class="phase-num">3</div>
@@ -334,12 +584,14 @@
         <button class="rubric-mode-btn" id="rubricBtnManual" onclick="setRubricMode('manual')">Fill Individually</button>
       </div>
 
+      <!-- Paste-all mode -->
       <div id="rubricPasteMode">
         <textarea class="rubric-paste-area" id="rubricRawPaste" rows="6" placeholder="Paste all rubric text here — Rubric 1, Rubric Name, Rubric Description, Rubric 2... the tool will extract them automatically"></textarea>
         <button class="rubric-parse-btn" id="rubricParseBtn" onclick="parseRubrics()">⇩ Extract Rubrics</button>
         <div style="font-size:0.7rem;color:var(--muted);margin-bottom:12px" id="rubricParseStatus"></div>
       </div>
 
+      <!-- Manual mode -->
       <div id="rubricManualMode" style="display:none">
         <div class="rubric-rows" id="rubricRows"></div>
       </div>
@@ -357,8 +609,10 @@
     <div class="loading-msg" id="loadingMsg">Starting evaluation...</div>
   </div>
 
+  <!-- ── RESULTS ── -->
   <div id="results">
 
+    <!-- A vs B -->
     <div class="phase1-result hidden" id="track1ResultBlock">
     <div class="results-divider"><span>Phase 1 — Response A vs B Scores</span></div>
     <div class="scores-grid" id="abScoresGrid"></div>
@@ -366,17 +620,21 @@
     <div id="abCommentSection"></div>
     </div>
 
+    <!-- Main scores -->
     <div class="results-divider"><span>Phase 2 — Built-in Rubric Scores</span></div>
     <div class="scores-grid" id="mainScoresGrid"></div>
 
+    <!-- Tournament comments -->
     <div class="results-divider"><span>Phase 2 — Tournament Comparison Comments</span></div>
     <div id="tournamentComments"></div>
 
+    <!-- Custom rubric scores -->
     <div id="customRubricScoreWrap" style="display:none">
       <div class="results-divider"><span>Phase 3 — Custom Rubric Scores (1–6)</span></div>
       <table class="rubric-score-table" id="customRubricTable"></table>
     </div>
 
+    <!-- Rubric alignment -->
     <div id="rubricAlignWrap" style="display:none">
       <div class="results-divider"><span>Phase 3 — Rubric Alignment Check</span></div>
       <div class="rubric-summary-box" id="rubricSummaryBox"></div>
@@ -524,38 +782,8 @@ function setRubricMode(mode) {
   }
 }
 
-// ── Track toggle (1/2/R) ─────────────────────────────────────
-function setTrack(selectedTrack) {
-  const track = String(selectedTrack);
-  window.currentTrack = track;
-  const btnTrack1 = document.getElementById('btnTrack1');
-  const btnTrack2 = document.getElementById('btnTrack2');
-  const btnTrackR = document.getElementById('btnTrackR');
-  const track1Block = document.getElementById('track1InputBlock');
-  const track1Result = document.getElementById('track1ResultBlock');
-  const trackDesc = document.getElementById('trackDesc');
 
-  btnTrack1.classList.toggle('active', track === '1');
-  btnTrack2.classList.toggle('active', track === '2');
-  btnTrackR.classList.toggle('active', track === 'R');
 
-  if (track === '1') {
-    track1Block.classList.remove('hidden');
-    track1Result.classList.remove('hidden');
-    trackDesc.textContent = 'Track 1 only — Original Prompt A/B (Phase 1)';
-  } else {
-    track1Block.classList.add('hidden');
-    track1Result.classList.add('hidden');
-  }
-
-  if (track === '2') {
-    trackDesc.textContent = 'Track 2 only — Enhanced Prompt, O1/O2/GPT/Gemini, Rubrics';
-  }
-
-  if (track === 'R') {
-    trackDesc.textContent = 'Track R only — Refine Comment';
-  }
-}
 
 // ── Parse pasted rubric text ──────────────────────────────────
 function parseRubrics() {
@@ -585,15 +813,22 @@ function parseRubrics() {
   document.getElementById('rubricParseStatus').textContent =
     'Extracted: ' + parsed.map((r,i) => 'Rubric '+(i+1)+' — '+(r.name||'(no name)')).join(' | ');
 
+  // Switch to manual view so user can verify
   setRubricMode('manual');
 }
 
 function extractRubricsFromText(text) {
   const results = [];
+
+  // Normalise line endings
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  // Find indices where each "Rubric N" header starts
   const rubricStarts = [];
   for (let i = 0; i < lines.length; i++) {
-    if (/^Rubric\s+[1-5]\s*$/i.test(lines[i].trim())) rubricStarts.push(i);
+    if (/^Rubric\s+[1-5]\s*$/i.test(lines[i].trim())) {
+      rubricStarts.push(i);
+    }
   }
 
   for (let r = 0; r < rubricStarts.length; r++) {
@@ -603,7 +838,7 @@ function extractRubricsFromText(text) {
 
     let name = '';
     let desc = '';
-    let mode = null;
+    let mode = null; // 'name' or 'desc'
 
     for (let i = 0; i < section.length; i++) {
       const line = section[i];
@@ -611,18 +846,25 @@ function extractRubricsFromText(text) {
 
       if (/^Rubric Name\s*$/i.test(trimmed)) { mode = 'name'; continue; }
       if (/^Rubric Description\s*$/i.test(trimmed)) { mode = 'desc'; continue; }
-      if (/^Justification Mismatch:/i.test(trimmed)) { continue; }
-      if (/^\*\s*$/.test(trimmed) || trimmed === '') { continue; }
+      if (/^Justification Mismatch:/i.test(trimmed)) { continue; } // skip noise line
+      if (/^\*\s*$/.test(trimmed) || trimmed === '') { continue; } // skip bullets and blanks
 
+      // strip leading bullet chars
       const clean = trimmed.replace(/^[\*\-•]\s*/, '').trim();
       if (!clean) continue;
 
-      if (mode === 'name' && !name) name = clean;
-      else if (mode === 'desc') desc = desc ? desc + ' ' + clean : clean;
+      if (mode === 'name' && !name) {
+        name = clean;
+      } else if (mode === 'desc') {
+        desc = desc ? desc + ' ' + clean : clean;
+      }
     }
 
-    if (name || desc) results.push({ name: name.slice(0, 200), desc: desc.slice(0, 1000) });
+    if (name || desc) {
+      results.push({ name: name.slice(0, 200), desc: desc.slice(0, 1000) });
+    }
   }
+
   return results.slice(0, 5);
 }
 
@@ -669,156 +911,676 @@ function colorFor(s) { return s>=5?'#6abf7b':s>=4?'#c8a96e':s>=3?'#e0a870':'#e07
 function wscore(r) { return DIMS.reduce((sum,d)=>sum+(r.scores[d.key]||0)*d.weight, 0); }
 
 function extractJSON(raw) {
-  if (!raw || typeof raw !== 'string') return null;
-  try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    return JSON.parse(jsonMatch[0]);
-  } catch (err) {
-    return null;
-  }
+  let t = raw.replace(/```(?:json)?/gi,'').trim();
+  const s=t.indexOf('['), e=t.lastIndexOf(']');
+  if(s!==-1&&e>s) t=t.slice(s,e+1);
+  t=t.replace(/,\s*([\]}])/g,'$1');
+  try{return JSON.parse(t);}
+  catch(_){try{return Function('"use strict";return('+t+')')();}catch(e2){throw new Error('JSON parse failed\n'+raw.slice(0,400));}}
 }
+function extractObj(raw) {
+  let t = raw.replace(/```(?:json)?/gi,'').trim();
+  const s=t.indexOf('{'), e=t.lastIndexOf('}');
+  if(s!==-1&&e>s) t=t.slice(s,e+1);
+  t=t.replace(/,\s*([\]}])/g,'$1');
+  try{return JSON.parse(t);}
+  catch(_){try{return Function('"use strict";return('+t+')')();}catch(e2){throw new Error('Object parse failed\n'+raw.slice(0,400));}}
+}
+async function claude(content, maxTokens=2000) {
+  const apiKey = (document.getElementById('geminiApiKey')?.value || '').trim();
+  if (!apiKey) throw new Error('Gemini API key is missing.');
 
-function scoreResponse(text, promptText = '') {
-  const length = Math.max(1, text.trim().length);
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  const hasPrompt = promptText && text.toLowerCase().includes(promptText.trim().split(/\s+/)[0]?.toLowerCase());
-
-  const base = Math.min(6, Math.max(1, Math.round(words / 40) + 1));
-  const truth = Math.min(6, Math.max(1, base + (hasPrompt ? 1 : 0)));
-  const ifScore = Math.min(6, Math.max(1, base + (text.includes('instructions') ? 1 : 0)));
-  const writing = Math.min(6, Math.max(1, Math.round((words / 35) + (text.length / 300))));
-  const verbosity = Math.min(6, Math.max(1, 7 - Math.round(length / 220)));
-  const correctness = Math.min(6, Math.max(1, base + (text.includes('correct') ? 1 : 0)));
-
-  return {
-    Truth: truth,
-    IF: ifScore,
-    Writing: writing,
-    Verbosity: verbosity,
-    Correctness: correctness,
+  const endpoint = 'https://api.labs.google.com/v1alpha2/models/gemini-1.5-pro:predict';
+  const requestBody = {
+    instances: [{ content }],
+    parameters: {
+      temperature: 0.0,
+      max_output_tokens: Math.min(maxTokens, 1200)
+    }
   };
-}
 
-function renderScoreCard(name, scores, winner = false) {
-  const total = wscore({scores}).toFixed(2);
-  return `
-    <div class="score-card${winner ? ' winner-card' : ''}">
-      <div class="winner-badge" style="display:${winner ? 'inline-block' : 'none'}">WINNER</div>
-      <div class="score-card-name">${name}</div>
-      ${Object.entries(scores).map(([dim,val]) => `<div class="score-row"><div class="score-dim">${dim}</div><div class="score-val">${val}</div></div>
-      <div class="score-bar-wrap"><div class="score-bar" style="width:${(val/6)*100}%;background:${colorFor(val)}"></div></div>`).join('')}
-      <div class="weighted-total"><span class="weighted-total-label">Weighted total</span><span class="weighted-total-val">${total}</span></div>
-    </div>
-  `;
-}
-
-function evaluateTrack1() {
-  const origPrompt = document.getElementById('origPrompt')?.value.trim();
-  const respA = document.getElementById('respA')?.value.trim();
-  const respB = document.getElementById('respB')?.value.trim();
-
-  if (!origPrompt || !respA || !respB) {
-    showError('Track 1 requires original prompt plus both Response A and Response B.');
-    return;
-  }
-
-  const scoreA = scoreResponse(respA, origPrompt);
-  const scoreB = scoreResponse(respB, origPrompt);
-  const weightedA = wscore({scores:scoreA});
-  const weightedB = wscore({scores:scoreB});
-
-  const grid = document.getElementById('abScoresGrid');
-  grid.innerHTML = '';
-  grid.insertAdjacentHTML('beforeend', renderScoreCard('Response A', scoreA, weightedA >= weightedB));
-  grid.insertAdjacentHTML('beforeend', renderScoreCard('Response B', scoreB, weightedB > weightedA));
-
-  const winnerName = weightedA >= weightedB ? 'Response A' : 'Response B';
-  const loserName = weightedA >= weightedB ? 'Response B' : 'Response A';
-  const diff = Math.abs(weightedA - weightedB).toFixed(2);
-
-  document.getElementById('abCommentSection').innerHTML = `
-    <p>${winnerName} is ${diff < 0.5 ? 'slightly' : diff < 1.5 ? 'better' : 'much better'} than ${loserName} based on weighted evaluation in Truthfulness and Instruction Following.</p>
-  `;
-}
-
-function evaluateTrack2() {
-  const enhancedPrompt = document.getElementById('enhPrompt')?.value.trim();
-  const main = getMainResponses();
-  if (!enhancedPrompt || main.length < 2) {
-    showError('Track 2 requires an enhanced prompt and at least two model responses.');
-    return;
-  }
-
-  const results = main.map(item => {
-    const scores = scoreResponse(item.text, enhancedPrompt);
-    return {...item, scores, total: wscore({scores})};
+  const r = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify(requestBody)
   });
 
-  results.sort((a,b) => b.total - a.total);
-  const grid = document.getElementById('mainScoresGrid');
-  grid.innerHTML = '';
-  results.forEach((item, index) => {
-    grid.insertAdjacentHTML('beforeend', renderScoreCard(item.name, item.scores, index === 0));
-  });
+  const d = await r.json();
+  if (!r.ok) {
+    const errMsg = d.error?.message || d.error || JSON.stringify(d);
+    throw new Error('Gemini API error: ' + errMsg);
+  }
 
-  const top = results[0];
-  const second = results[1];
-  document.getElementById('tournamentComments').innerHTML = `
-    <p>${top.name} beats ${second.name} with ${top.total.toFixed(2)} vs ${second.total.toFixed(2)} in weighted rubric.</p>
-  `;
-
-  const customRubrics = getRubrics();
-  const customWrap = document.getElementById('customRubricScoreWrap');
-  if (customRubrics.length === 0) {
-    customWrap.style.display = 'none';
+  let text = '';
+  if (d.predictions && Array.isArray(d.predictions)) {
+    text = d.predictions.map(p => (p.content || '')).join('\n');
+  } else if (d.output && Array.isArray(d.output)) {
+    text = d.output.map(o => (o.content || o.text || '')).join('\n');
+  } else if (d.candidates && Array.isArray(d.candidates)) {
+    text = d.candidates.map(c => (c.content || c.text || '')).join('\n');
   } else {
-    customWrap.style.display = '';
-    const table = document.getElementById('customRubricTable');
-    table.innerHTML = '<tr><th>Model</th>' + customRubrics.map(r => `<th>${r.name || 'Rubric'}</th>`).join('') + '</tr>';
-    results.forEach(resp => {
-      const row = `<tr><td class="model-col">${resp.name}</td>` + customRubrics.map(r => `<td>${Math.min(6,Math.max(1,Math.round((resp.text.length/200)+3)))}</td>`).join('') + '</tr>';
-      table.innerHTML += row;
-    });
+    text = JSON.stringify(d);
   }
 
-  const alignWrap = document.getElementById('rubricAlignWrap');
-  alignWrap.style.display = 'none';
+  return text;
 }
 
-function evaluateTrackR() {
-  document.getElementById('rubricAlignWrap').style.display = 'none';
-  document.getElementById('tournamentComments').innerHTML = '<p>Refine Comment track selected; enter input and run but this demo does not generate external output yet.</p>';
+// ── Render helpers ────────────────────────────────────────────
+// ── Auto-refine a comment to fix rule violations before displaying ────
+async function autoRefineComment(comment, pair) {
+  if (!comment || comment.length < 10) return comment;
+  try {
+    const refinePrompt = `Fix ONLY rule violations in this comment. Preserve meaning, winner, dimension, and evidence exactly — copy-edit only.
+
+BANNED WORDS (remove every single one — zero tolerance):
+additionally, moreover, furthermore, conversely, significantly, robust, notably, seamlessly, ultimately, pivotal, commendable, nuance, nuanced, meticulous, meticulously, comprehensively, comprehensive, in conclusion, in summary, leverage, leverages, leveraged, demonstrates a clear, let me, overall the, overall both, overall this,
+streamline, streamlines, streamlined, fundamentally, utilize, utilizes, utilized, intricate, optimize, optimizes, optimized, facilitate, facilitates, inherently, nevertheless, exemplary, impeccable, underpinning, underpinnings, efficacy, realm, encompass, encompasses, consequently, showcases, showcase, substantiate, exemplify, proficient, delve, it is important to note, it is worth noting, holistic, paramount, subsequently
+
+BANNED OPENINGS: "Both models/responses provide/demonstrate/exhibit...", "Both models exhibit/demonstrate...", "Each response provide/demonstrate...", "Overall both/the...", "While Response A's/B's...", do not start with "I"
+BANNED STRUCTURE: ordinal/sequential words anywhere — first, second, third, fourth, firstly, secondly — even mid-sentence like "first prove X before Y" or "first ... then ..."; rephrase as plain prose
+MUST name a dimension: Instruction Following, Truthfulness, Prompt Correctness, Writing Quality, or Verbosity
+MUST open with winner vs loser in first sentence
+No tie — always one clear winner with magnitude (slightly better / better / much better)
+Max 3 hedging words (may/might/could/appears/seems/suggests/arguably/somewhat/perhaps/possibly)
+Vary sentence lengths — no 3+ same-length sentences
+
+PAIR: ${pair}
+COMMENT: "${comment.replace(/"/g, "'")}"
+
+Return ONLY: {"violations_found":true_or_false,"refined_comment":"..."}`;
+
+    const raw = await claude(refinePrompt, 500);
+    const result = extractObj(raw);
+    if (result && result.refined_comment && result.refined_comment.length > 10) {
+      return result.refined_comment;
+    }
+    return comment;
+  } catch(e) {
+    // if refine fails silently, return original
+    return comment;
+  }
 }
 
+
+function renderScoreGrid(gridId, scored, winnerName=null) {
+  const grid=document.getElementById(gridId);
+  grid.innerHTML='';
+  scored.forEach((r,i)=>{
+    const w=wscore(r);
+    const isW = winnerName && r.name===winnerName;
+    const card=document.createElement('div');
+    card.className='score-card'+(isW?' winner-card':'');
+    card.style.animationDelay=i*0.07+'s';
+    card.innerHTML=`
+      ${isW?'<div class="winner-badge">O1 vs O2 Winner</div>':''}
+      <div class="score-card-name">${r.name}</div>
+      ${DIMS.map(d=>{const v=r.scores[d.key]||0;const col=colorFor(v);return`
+        <div class="score-row"><span class="score-dim">${d.label}</span><span class="score-val" style="color:${col}">${v}/6</span></div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${(v/6)*100}%;background:${col}"></div></div>`;}).join('')}
+      <div class="weighted-total">
+        <span class="weighted-total-label">Weighted Total</span>
+        <span class="weighted-total-val" style="color:${colorFor(w)}">${w.toFixed(2)}</span>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderComment(sectionId, pair, comment, delay=0) {
+  const s=document.getElementById(sectionId);
+  const b=document.createElement('div');
+  b.className='comparison-block';
+  b.style.animationDelay=delay+'s';
+  const safeComment = comment.replace(/`/g,"'");
+  b.innerHTML=`
+    <div class="comparison-block-top">
+      <div class="comparison-pair">${pair}</div>
+      <button class="copy-btn" onclick="copyText(\`${safeComment}\`, this)">⎘ Copy</button>
+    </div>
+    <div class="comparison-text">${comment}</div>`;
+  s.appendChild(b);
+}
+
+function renderCustomRubricTable(rubrics, scored) {
+  document.getElementById('customRubricScoreWrap').style.display='block';
+  const table=document.getElementById('customRubricTable');
+  const modelNames=scored.map(r=>r.name);
+  table.innerHTML=`
+    <thead><tr>
+      <th>Rubric</th>
+      ${modelNames.map(n=>`<th class="model-col">${n}</th>`).join('')}
+    </tr></thead>
+    <tbody>
+      ${rubrics.map((rub,ri)=>`<tr>
+        <td>${rub.name||'Rubric '+(ri+1)}</td>
+        ${scored.map(r=>{const v=(r.customScores&&r.customScores[ri])||0;return`<td><span class="cell-score" style="color:${colorFor(v)}">${v}/6</span></td>`;}).join('')}
+      </tr>`).join('')}
+    </tbody>`;
+}
+
+function renderRubricAnalysis(analysis) {
+  document.getElementById('rubricAlignWrap').style.display='block';
+  document.getElementById('rubricSummaryBox').textContent=analysis.overall_summary||'';
+  const sec=document.getElementById('rubricAnalysisSection');
+  sec.innerHTML='';
+  (analysis.rubrics||[]).forEach((r,i)=>{
+    const st=(r.status||'partial').toLowerCase();
+    const bc=st==='aligned'?'badge-aligned':st==='misaligned'?'badge-misaligned':'badge-partial';
+    const nc=st==='aligned'?'aligned':st==='misaligned'?'misaligned':'partial';
+    const b=document.createElement('div');
+    b.className='rubric-analysis-block'; b.style.animationDelay=i*0.07+'s';
+    b.innerHTML=`<div class="rub-name ${nc}">${r.name||'Rubric '+(i+1)}<span class="rub-status-badge ${bc}">${st}</span></div><div class="rub-suggestion">${r.suggestion||''}</div>`;
+    sec.appendChild(b);
+  });
+  const cg=document.getElementById('criteriaGrid');
+  cg.innerHTML='';
+  (analysis.criteria||[]).forEach((cr,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='criteria-chip-wrap';
+    wrap.style.animationDelay=i*0.05+'s';
+    const chip=document.createElement('div');
+    chip.className='criteria-chip';
+    chip.textContent=cr;
+    const cpBtn=document.createElement('button');
+    cpBtn.className='copy-btn';
+    cpBtn.style.fontSize='0.54rem';
+    cpBtn.style.padding='2px 7px';
+    cpBtn.innerHTML='&#x2398;';
+    cpBtn.addEventListener('click', function(){ copyText(cr, cpBtn); });
+    wrap.appendChild(chip);
+    wrap.appendChild(cpBtn);
+    cg.appendChild(wrap);
+  });
+}
+
+
+
+// ── Copy / Paste helpers ──────────────────────────────────────
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1800);
+  } catch(e) {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+
+// ── Track toggle ──────────────────────────────────────────────
+let activeTrack = 2;
+
+function setTrack(t) {
+  activeTrack = t;
+  const block    = document.getElementById('track1InputBlock');
+  const result   = document.getElementById('track1ResultBlock');
+  const btn1     = document.getElementById('btnTrack1');
+  const btn2     = document.getElementById('btnTrack2');
+  const btnR     = document.getElementById('btnTrackR');
+  const desc     = document.getElementById('trackDesc');
+  const main     = document.querySelector('.main');
+  const refine   = document.getElementById('refinePanel');
+
+  // Reset all buttons
+  [btn1, btn2, btnR].forEach(b => b.classList.remove('active'));
+
+  if (t === 'R') {
+    // Show refine panel, hide main
+    refine.classList.add('active');
+    main.style.display = 'none';
+    btnR.classList.add('active');
+    btnR.style.borderColor = 'var(--accent)';
+    btnR.style.color = '#0d0f14';
+    btnR.style.background = 'var(--accent3)';
+    desc.textContent = 'Refine mode — paste a comment, get it rewritten to spec';
+  } else {
+    // Hide refine panel, show main
+    refine.classList.remove('active');
+    main.style.display = '';
+    btnR.style.borderColor = 'var(--accent3)';
+    btnR.style.color = 'var(--accent3)';
+    btnR.style.background = 'transparent';
+
+    if (t === 1) {
+      block.classList.remove('hidden');
+      block.style.maxHeight = block.scrollHeight + 2000 + 'px';
+      btn1.classList.add('active');
+      desc.textContent = 'Track 1 + Track 2 — both phases will run';
+    } else {
+      block.classList.add('hidden');
+      block.style.maxHeight = '0';
+      if (result) result.classList.add('hidden');
+      btn2.classList.add('active');
+      desc.textContent = 'Track 2 only — Enhanced Prompt, O1/O2/GPT/Gemini, Rubrics';
+    }
+  }
+}
+
+// ── Main evaluation ───────────────────────────────────────────
 async function runEvaluation() {
   hideError();
-  const key = (document.getElementById('geminiApiKey')?.value || '').trim();
-  if (!key) {
-    showError('Please paste your Gemini API key first in the API Key field.');
-    return;
-  }
+  const origPrompt = document.getElementById('origPrompt').value.trim();
+  const respA      = document.getElementById('respA').value.trim();
+  const respB      = document.getElementById('respB').value.trim();
+  const enhPrompt  = document.getElementById('enhPrompt').value.trim();
+  const mainResps  = getMainResponses();
+  const rubrics    = getRubrics();
 
-  setLoading(true, 'Running evaluation locally...');
-  await new Promise(resolve => setTimeout(resolve, 400));
+  if (activeTrack === 1) {
+    if (!origPrompt)      { showError('Please fill in the Original Prompt.'); return; }
+    if (!respA || !respB) { showError('Please fill in both Response A and Response B.'); return; }
+  }
+  if (!enhPrompt)        { showError('Please fill in the Enhanced Prompt.'); return; }
+  if (mainResps.length < 2) { showError('Please fill in at least O1 and O2 responses.'); return; }
+
+  document.getElementById('results').style.display='none';
+  document.getElementById('abCommentSection').innerHTML='';
+  document.getElementById('tournamentComments').innerHTML='';
+  document.getElementById('customRubricScoreWrap').style.display='none';
+  document.getElementById('rubricAlignWrap').style.display='none';
+  document.getElementById('runBtn').disabled=true;
+  setLoading(true,'Scoring Response A and B...');
 
   try {
-    const track = window.currentTrack || '2';
-    if (track === '1') evaluateTrack1();
-    else if (track === '2') evaluateTrack2();
-    else if (track === 'R') evaluateTrackR();
+
+    // ══════════════════════════════════════════════
+    // STEP 1 — Score A and B on original prompt
+    // ══════════════════════════════════════════════
+    const abScoringPrompt = `You are a strict academic evaluator. Differentiate clearly — ties on any dimension are forbidden. Always pick a clear winner even if the margin is small.
+
+${RUBRIC_TEXT}
+
+ORIGINAL PROMPT:
+${origPrompt}
+
+RESPONSE A:
+${respA}
+
+RESPONSE B:
+${respB}
+
+Return ONLY a JSON array (no markdown):
+[
+  {"name":"Response A","scores":{"IF":0,"Truth":0,"Correctness":0,"Writing":0,"Verbosity":0},"brief_reasoning":"IF:...|Truth:...|Correctness:...|Writing:...|Verbosity:..."},
+  {"name":"Response B","scores":{"IF":0,"Truth":0,"Correctness":0,"Writing":0,"Verbosity":0},"brief_reasoning":"IF:...|Truth:...|Correctness:...|Writing:...|Verbosity:..."}
+]`;
+
+    let abScored = [];
+    if (activeTrack === 1) {
+    const rawAB = await claude(abScoringPrompt, 1500);
+    abScored = extractJSON(rawAB);
+
+    // Render A/B scores
+    renderScoreGrid('abScoresGrid', abScored);
+    document.getElementById('track1ResultBlock').classList.remove('hidden');
+
+    // Generate A vs B comment — safe lookup
+    const sA = abScored.find(r => r.name && r.name.toLowerCase().includes('response a')) ||
+               abScored.find(r => r.name && r.name.toLowerCase().endsWith('a')) ||
+               abScored[0];
+    const sB = abScored.find(r => r.name && r.name.toLowerCase().includes('response b')) ||
+               abScored.find(r => r.name && r.name.toLowerCase().endsWith('b')) ||
+               abScored[1];
+    if (!sA || !sB) throw new Error('A/B scoring returned ' + abScored.length + ' entries, expected 2. Check API response.');
+    const abWinner = wscore(sA) >= wscore(sB) ? 'Response A' : 'Response B';
+    const abLoser  = wscore(sA) >= wscore(sB) ? 'Response B' : 'Response A';
+    const abCommentPrompt = `${COMPARE_RULES}
+
+SCORE-DETERMINED WINNER — THIS IS NON-NEGOTIABLE:
+The winner based on weighted scores is: ${abWinner}
+The loser is: ${abLoser}
+You MUST write the comment with ${abWinner} as the better response. Do not contradict this. The comment must open with "${abWinner} is better than ${abLoser}..." regardless of your own reading of the responses.
+
+ORIGINAL PROMPT:
+${origPrompt}
+
+PAIR: Response A vs Response B
+Response A: weighted=${wscore(sA).toFixed(2)} IF=${sA.scores.IF} Truth=${sA.scores.Truth} Correctness=${sA.scores.Correctness} Writing=${sA.scores.Writing} Verbosity=${sA.scores.Verbosity}
+Response B: weighted=${wscore(sB).toFixed(2)} IF=${sB.scores.IF} Truth=${sB.scores.Truth} Correctness=${sB.scores.Correctness} Writing=${sB.scores.Writing} Verbosity=${sB.scores.Verbosity}
+Response A notes: ${sA.brief_reasoning}
+Response B notes: ${sB.brief_reasoning}
+
+Return ONLY a JSON array (no markdown):
+[{"pair":"Response A vs Response B","comment":"..."}]`;
+
+    const rawABCmt = await claude(abCommentPrompt, 600);
+    const abCmts = extractJSON(rawABCmt);
+    if (abCmts && abCmts[0]) {
+      renderComment('abCommentSection', abCmts[0].pair, abCmts[0].comment);
+    } else {
+      renderComment('abCommentSection', 'Response A vs Response B', 'Could not generate comment.');
+    }
+    } // end if(activeTrack===1)
+
+    // ══════════════════════════════════════════════
+    // STEP 2 — Score O1/O2/GPT/Gemini on enhanced prompt
+    // ══════════════════════════════════════════════
+    setLoading(true,'Scoring O1, O2, GPT, Gemini...');
+
+    const mainScoringPrompt = `You are a strict academic evaluator. Differentiate clearly — ties on any dimension are forbidden. Scores across models MUST vary on at least one dimension each.
+
+${RUBRIC_TEXT}
+
+ENHANCED PROMPT:
+${enhPrompt}
+
+RESPONSES:
+${mainResps.map(r=>`--- ${r.name} ---\n${r.text}`).join('\n\n')}
+
+Return ONLY a JSON array (no markdown):
+[{"name":"exact name","scores":{"IF":0,"Truth":0,"Correctness":0,"Writing":0,"Verbosity":0},"brief_reasoning":"IF:...|Truth:...|Correctness:...|Writing:...|Verbosity:..."}]`;
+
+    const rawMain = await claude(mainScoringPrompt, 2500);
+    const mainScored = extractJSON(rawMain);
+
+    // Identify O1 vs O2 winner
+    const nn = n => (n||'').toLowerCase().replace(/\s/g,'');
+    const sO1 = mainScored.find(r=>nn(r.name)==='o1') || mainScored.find(r=>nn(r.name).startsWith('o1'));
+    const sO2 = mainScored.find(r=>nn(r.name)==='o2') || mainScored.find(r=>nn(r.name).startsWith('o2'));
+    if (!sO1 || !sO2) {
+      const names = mainScored.map(r=>r.name).join(', ');
+      throw new Error('Could not find O1 or O2. Got names: ' + names + '. Name your cards exactly "O1" and "O2".');
+    }
+    const winner = wscore(sO1)>=wscore(sO2)?sO1:sO2;
+
+    const sGPT    = mainScored.find(r=>nn(r.name).includes('gpt'));
+    const sGemini = mainScored.find(r=>nn(r.name).includes('gemini'));
+
+    renderScoreGrid('mainScoresGrid', mainScored, winner.name);
+
+    // Tournament comparison comments
+    setLoading(true,'Writing tournament comments...');
+    const tournPairs = [[sO1, sO2]];
+    if (sGPT)    tournPairs.push([winner, sGPT]);
+    if (sGemini) tournPairs.push([winner, sGemini]);
+
+    const tournPrompt = `${COMPARE_RULES}
+
+SCORE-DETERMINED WINNERS — THESE ARE NON-NEGOTIABLE:
+For every pair below, the winner has been determined by weighted scores. You MUST write each comment with the declared winner as the better response. Do not contradict any of these decisions.
+${tournPairs.map(([a,b])=>{const w=wscore(a)>=wscore(b)?a.name:b.name; const l=wscore(a)>=wscore(b)?b.name:a.name; return `  ${a.name} vs ${b.name} → WINNER: ${w}, LOSER: ${l}`;}).join('\n')}
+
+ENHANCED PROMPT:
+${enhPrompt}
+
+PAIRS:
+${tournPairs.map(([a,b])=>{const w=wscore(a)>=wscore(b)?a.name:b.name; const l=wscore(a)>=wscore(b)?b.name:a.name; return `${a.name} vs ${b.name}
+  DECLARED WINNER: ${w} — comment MUST open with "${w} is better than ${l}..."
+  ${a.name}: weighted=${wscore(a).toFixed(2)} IF=${a.scores.IF} Truth=${a.scores.Truth} Correctness=${a.scores.Correctness} Writing=${a.scores.Writing} Verbosity=${a.scores.Verbosity}
+  ${b.name}: weighted=${wscore(b).toFixed(2)} IF=${b.scores.IF} Truth=${b.scores.Truth} Correctness=${b.scores.Correctness} Writing=${b.scores.Writing} Verbosity=${b.scores.Verbosity}
+  ${a.name} notes: ${a.brief_reasoning}
+  ${b.name} notes: ${b.brief_reasoning}`;}).join('\n\n')}
+
+Return ONLY a JSON array (no markdown):
+[{"pair":"Name1 vs Name2","comment":"..."}]`;
+
+    const rawTourn = await claude(tournPrompt, 1500);
+    const tournCmts = extractJSON(rawTourn);
+    document.getElementById('tournamentComments').innerHTML='';
+    if (Array.isArray(tournCmts)) {
+      tournCmts.forEach((tc,i) => {
+        if (tc && tc.pair && tc.comment) renderComment('tournamentComments', tc.pair, tc.comment, i*0.1);
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    // STEP 3 — Score O1/O2/GPT/Gemini on custom rubrics
+    // ══════════════════════════════════════════════
+    if(rubrics.length>0) {
+      setLoading(true,'Scoring on custom rubrics...');
+
+      const customScoringPrompt = `You are scoring AI model responses on custom rubrics (1-6 scale each). Be strict and differentiate — avoid ties.
+
+ENHANCED PROMPT:
+${enhPrompt}
+
+CUSTOM RUBRICS:
+${rubrics.map((r,i)=>`${i+1}. ${r.name}: ${r.desc}`).join('\n')}
+
+RESPONSES:
+${mainResps.map(r=>`--- ${r.name} ---\n${r.text}`).join('\n\n')}
+
+Return ONLY a JSON array (no markdown) where customScores is an array of integers matching the rubric order:
+[{"name":"O1","customScores":[score1,score2,score3,score4,score5]},{"name":"O2","customScores":[...]},{"name":"GPT","customScores":[...]},{"name":"Gemini","customScores":[...]}]`;
+
+      const rawCustom = await claude(customScoringPrompt, 1500);
+      const customScored = extractJSON(rawCustom);
+
+      // Merge customScores into mainScored
+      mainScored.forEach(r=>{
+        const match=customScored.find(c=>nn(c.name)===nn(r.name));
+        if(match) r.customScores=match.customScores;
+      });
+
+      renderCustomRubricTable(rubrics, mainScored);
+
+      // Rubric alignment check + criteria
+      setLoading(true,'Analysing rubric alignment...');
+      const alignPrompt = `You are a rubric quality analyst.
+
+1. For each rubric check if it is aligned, partially aligned, or misaligned with the prompt. Give a specific actionable suggestion.
+2. Write a 2-3 sentence overall summary of the rubric set coverage. Mention any important gap.
+3. Generate exactly 5 general evaluation criteria derived from these rubrics. Use lowercase hyphenated phrases like "mathematical proof validity". These should be general concepts, not prompt-specific.
+
+ENHANCED PROMPT:
+${enhPrompt}
+
+RUBRICS:
+${rubrics.map((r,i)=>`${i+1}. ${r.name}: ${r.desc}`).join('\n')}
+
+Return ONLY this JSON object (no markdown):
+{"overall_summary":"...","rubrics":[{"name":"...","status":"aligned|partial|misaligned","suggestion":"..."}],"criteria":["...","...","...","...","..."]}`;
+
+      const rawAlign = await claude(alignPrompt, 1500);
+      const analysis = extractObj(rawAlign);
+      renderRubricAnalysis(analysis);
+    }
+
     setLoading(false);
-  } catch (err) {
+    document.getElementById('results').style.display='block';
+    document.getElementById('results').scrollIntoView({behavior:'smooth'});
+
+  } catch(err) {
     setLoading(false);
-    showError('Evaluation failed: ' + (err.message || err));
+    showError('Something went wrong: '+err.message);
+  } finally {
+    document.getElementById('runBtn').disabled=false;
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initRubricRows();
-  initMainCards();
-  setTrack(2);
-});
+
+// ── Refine Comment ────────────────────────────────────────────
+async function runRefine() {
+  const input   = document.getElementById('refineInput').value.trim();
+  const pair    = document.getElementById('refinePair').value.trim();
+  const context = document.getElementById('refineContext').value.trim();
+
+  if (!input) { alert('Please paste a comment to refine.'); return; }
+
+  const MAX_PASSES = 3;
+
+  document.getElementById('refineBtnRun').disabled = true;
+  document.getElementById('refineLoading').classList.add('active');
+  document.getElementById('refineResultBlock').classList.remove('visible');
+  document.getElementById('cleanBanner').classList.remove('visible');
+  document.getElementById('passTracker').innerHTML = '';
+  document.getElementById('refineViolationsList').innerHTML = '';
+
+  const allViolations = []; // accumulate across passes
+
+  function buildRefinePrompt(comment) {
+    // Condensed rule checklist — much shorter than full COMPARE_RULES
+    const CHECKLIST = `RULES TO ENFORCE (all mandatory):
+
+BANNED WORDS — remove every one, zero tolerance:
+additionally, moreover, furthermore, conversely, significantly, robust, notably, seamlessly, ultimately, pivotal, commendable, nuance, nuanced, meticulous, meticulously, comprehensively, comprehensive, in conclusion, in summary, leverage, leverages, leveraged, demonstrates a clear, let me, overall the, overall both, overall this,
+streamline, streamlines, streamlined, fundamentally, utilize, utilizes, utilized, intricate, optimize, optimizes, optimized, facilitate, facilitates, inherently, nevertheless, exemplary, impeccable, underpinning, underpinnings, efficacy, realm, encompass, encompasses, consequently, showcases, showcase, substantiate, exemplify, proficient, delve, it is important to note, it is worth noting, holistic, paramount, subsequently
+
+BANNED OPENINGS — never start with: "Both models/responses provide/demonstrate/exhibit...", "Both models exhibit/demonstrate...", "Each response provide/demonstrate...", "Overall both/the...", "While Response A's/B's...", do not start with "I"
+
+BANNED STRUCTURE — ordinal/sequential words anywhere in the comment: first, second, third, fourth, firstly, secondly — this includes mid-sentence use like "first prove X" or "first ... then ..." — these are AI structural patterns; rephrase as "the prompt required X before Y" or plain sequential prose
+
+MANDATORY DIMENSION — must name at least one of: Instruction Following, Truthfulness, Prompt Correctness, Writing Quality, Verbosity
+
+OPENING RULE — first sentence must state who is better than whom: "[Name] is [slightly better / better / much better] than [Name] because..."
+
+WINNER RULE — never a tie, always pick one clear winner with magnitude
+
+HEDGING RULE — fewer than 4 of: may, might, could, appears, seems, suggests, arguably, somewhat, perhaps, possibly
+
+SENTENCE RHYTHM — vary lengths, no 3+ sentences all the same approximate length
+
+EVIDENCE RULE — cite specific behaviour, no vague quality words (clear, robust, coherent, comprehensive, intricate, proficient), no praise (impressive, well-structured, thorough, rigorous)`;
+
+    return `You are a strict comment quality editor. Fix ONLY rule violations — preserve meaning exactly.
+
+CRITICAL: Do NOT change the winner, dimension named, or evidence. Copy-edit only — same person wrote it, just cleaned up.
+
+${CHECKLIST}
+
+${pair ? 'PAIR: ' + pair : ''}
+${context ? 'CONTEXT: ' + context : ''}
+
+COMMENT:
+"${comment.replace(/"/g, "'")}"
+
+Return ONLY this JSON (no markdown):
+{"violations":[{"rule":"...","problem":"exact quote of offending text"}],"refined_comment":"...","is_clean":true_or_false}`;
+  }
+
+  try {
+    let current = input;
+    let isClean = false;
+
+    for (let pass = 1; pass <= MAX_PASSES; pass++) {
+      // Add pass badge as running
+      const tracker = document.getElementById('passTracker');
+      const badge = document.createElement('span');
+      badge.className = 'pass-badge running';
+      badge.id = 'passBadge' + pass;
+      badge.textContent = 'Pass ' + pass + '...';
+      tracker.appendChild(badge);
+
+      document.getElementById('refineLoading').querySelector('.loading-msg').textContent =
+        'Pass ' + pass + ' of max ' + MAX_PASSES + ' — checking for violations...';
+
+      const raw = await claude(buildRefinePrompt(current), 800);
+      const result = extractObj(raw);
+
+      if (!result || !result.refined_comment) {
+        badge.textContent = 'Pass ' + pass + ' — parse error';
+        badge.className = 'pass-badge';
+        break;
+      }
+
+      // Collect violations from this pass
+      if (result.violations && result.violations.length > 0) {
+        result.violations.forEach(v => allViolations.push({ pass, ...v }));
+        badge.textContent = 'Pass ' + pass + ' — ' + result.violations.length + ' fixed';
+        badge.className = 'pass-badge fixed';
+      }
+
+      current = result.refined_comment;
+
+      if (result.is_clean === true || !result.violations || result.violations.length === 0) {
+        badge.textContent = 'Pass ' + pass + ' — clean ✓';
+        badge.className = 'pass-badge clean';
+        isClean = true;
+        break;
+      }
+    }
+
+    // Render all accumulated violations
+    const violBlock = document.getElementById('refineViolationsBlock');
+    const violList  = document.getElementById('refineViolationsList');
+    violList.innerHTML = '';
+    if (allViolations.length > 0) {
+      violBlock.style.display = 'block';
+      allViolations.forEach(v => {
+        const item = document.createElement('div');
+        item.className = 'violation-item';
+        item.innerHTML = '<div class="violation-dot"></div><div>'
+          + '<span style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.62rem">Pass ' + v.pass + '</span> '
+          + '<span style="color:var(--warn);font-family:DM Mono,monospace;font-size:0.7rem"> ' + (v.rule||'') + '</span>'
+          + ' — ' + (v.problem||'') + '</div>';
+        violList.appendChild(item);
+      });
+    } else {
+      violBlock.style.display = 'none';
+    }
+
+    // Show clean banner if clean
+    if (isClean) {
+      document.getElementById('cleanBanner').classList.add('visible');
+    }
+
+    document.getElementById('refineOutput').textContent = current;
+    document.getElementById('refineResultBlock').classList.add('visible');
+
+  } catch(err) {
+    alert('Something went wrong: ' + err.message);
+  } finally {
+    document.getElementById('refineBtnRun').disabled = false;
+    document.getElementById('refineLoading').classList.remove('active');
+    document.getElementById('refineLoading').querySelector('.loading-msg').textContent = 'Analysing and rewriting...';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+initRubricRows();
+initMainCards();
 </script>
+
+
+<!-- ── REFINE PANEL ── -->
+<div class="refine-panel" id="refinePanel">
+  <div class="refine-inner">
+    <div class="refine-heading">Refine Comment</div>
+    <div class="refine-sub">Paste any comparison comment below. The tool detects rule violations and fixes only those — the meaning, winner, evidence, and dimension stay exactly as you wrote them.</div>
+
+    <div class="refine-field-label">Comment to Refine</div>
+    <textarea id="refineInput" rows="7" placeholder="Paste the comment here..."></textarea>
+
+    <div style="margin-top:14px">
+      <div class="refine-field-label">Context — Pair being compared (optional but recommended)</div>
+      <input type="text" id="refinePair" placeholder="e.g. O1 vs GPT 5.2" style="margin-bottom:10px" />
+      <div class="refine-field-label">Prompt context (optional)</div>
+      <textarea id="refineContext" rows="3" placeholder="Paste a brief description of what the prompt asked for, so the refined comment can reference it..."></textarea>
+    </div>
+
+    <button class="refine-btn" id="refineBtnRun" onclick="runRefine()">Refine Comment</button>
+
+    <div class="refine-loading" id="refineLoading">
+      <div class="spinner"></div>
+      <span class="loading-msg">Analysing and rewriting...</span>
+    </div>
+
+    <div class="pass-tracker" id="passTracker"></div>
+
+    <div class="refine-result-block" id="refineResultBlock">
+      <div class="clean-banner" id="cleanBanner">✓ No rule violations found — comment is clean</div>
+      <div class="refine-violations" id="refineViolationsBlock" style="display:none">
+        <div class="refine-violations-title">Rules violated — fixed across passes</div>
+        <div id="refineViolationsList"></div>
+      </div>
+      <div class="refine-result-label" style="margin-top:16px">Refined Comment</div>
+      <div class="refine-output" id="refineOutput"></div>
+      <div class="refine-copy-row">
+        <button class="copy-btn" style="font-size:0.68rem;padding:5px 14px" onclick="copyText(document.getElementById('refineOutput').textContent, this)">⎘ Copy Refined Comment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
