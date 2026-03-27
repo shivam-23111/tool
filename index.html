@@ -524,6 +524,38 @@ function setRubricMode(mode) {
   }
 }
 
+// ── Track toggle (1/2/R) ─────────────────────────────────────
+function setTrack(selectedTrack) {
+  const track = String(selectedTrack);
+  const btnTrack1 = document.getElementById('btnTrack1');
+  const btnTrack2 = document.getElementById('btnTrack2');
+  const btnTrackR = document.getElementById('btnTrackR');
+  const track1Block = document.getElementById('track1InputBlock');
+  const track1Result = document.getElementById('track1ResultBlock');
+  const trackDesc = document.getElementById('trackDesc');
+
+  btnTrack1.classList.toggle('active', track === '1');
+  btnTrack2.classList.toggle('active', track === '2');
+  btnTrackR.classList.toggle('active', track === 'R');
+
+  if (track === '1') {
+    track1Block.classList.remove('hidden');
+    track1Result.classList.remove('hidden');
+    trackDesc.textContent = 'Track 1 only — Original Prompt A/B (Phase 1)';
+  } else {
+    track1Block.classList.add('hidden');
+    track1Result.classList.add('hidden');
+  }
+
+  if (track === '2') {
+    trackDesc.textContent = 'Track 2 only — Enhanced Prompt, O1/O2/GPT/Gemini, Rubrics';
+  }
+
+  if (track === 'R') {
+    trackDesc.textContent = 'Track R only — Refine Comment';
+  }
+}
+
 // ── Parse pasted rubric text ──────────────────────────────────
 function parseRubrics() {
   const raw = document.getElementById('rubricRawPaste').value.trim();
@@ -636,6 +668,31 @@ function colorFor(s) { return s>=5?'#6abf7b':s>=4?'#c8a96e':s>=3?'#e0a870':'#e07
 function wscore(r) { return DIMS.reduce((sum,d)=>sum+(r.scores[d.key]||0)*d.weight, 0); }
 
 function extractJSON(raw) {
-  let t = raw.replace(/
-http://googleusercontent.com/immersive_entry_chip/0
-http://googleusercontent.com/immersive_entry_chip/1
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    return JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    return null;
+  }
+}
+
+function runEvaluation() {
+  // Keep track toggle working even if evaluation backend is not wired.
+  hideError();
+  setLoading(true, 'Running evaluation...');
+  setTimeout(() => {
+    setLoading(false);
+    alert('Evaluation flow is available once your API credentials and backend are configured.');
+  }, 650);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initRubricRows();
+  initMainCards();
+  setTrack(2);
+});
+</script>
+</body>
+</html>
